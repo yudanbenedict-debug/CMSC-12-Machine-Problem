@@ -1,131 +1,79 @@
 // Source code is decompiled from a .class file using FernFlower decompiler (from Intellij IDEA).
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.GridBagLayout;
-import java.awt.Image;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.image.ImageObserver;
-import java.util.Objects;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import javax.imageio.ImageIO;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
-public class EntryScreen extends JFrame {
-   private final EntryScreenPanel backgroundPanel;
+class EntryScreen$EntryScreenPanel extends JPanel {
+   private BufferedImage backgroundImage;
+   private int offset = 0;
+   private Timer scrollTimer;
+   private int scrollSpeed = 2;
 
-   public EntryScreen(String var1) {
-      this.setTitle("Island Escapers - Main Menu");
-      this.setDefaultCloseOperation(3);
-      this.setSize(400, 400);
-      this.setLocationRelativeTo((Component)null);
-      this.backgroundPanel = new EntryScreenPanel("Ocean.png");
-      this.setContentPane(this.backgroundPanel);
-      this.backgroundPanel.setLayout(new GridBagLayout());
-      JPanel var2 = new JPanel();
-      var2.setOpaque(false);
-      var2.setLayout(new BoxLayout(var2, 1));
-      JLabel var3 = new JLabel("Island Escaper");
-      var3.setFont(new Font("Hellvetica", 1, 36));
-      var3.setForeground(Color.WHITE);
-      var3.setAlignmentX(0.5F);
-      var2.add(Box.createVerticalStrut(80));
-      var2.add(var3);
-      JButton var4 = new JButton("Play");
-      var4.setFont(new Font("Arial", 1, 20));
-      var4.setPreferredSize(new Dimension(200, 60));
-      var4.setMaximumSize(new Dimension(200, 60));
-      var4.setAlignmentX(0.5F);
-      var4.addActionListener((var1x) -> this.startGame());
-      var2.add(Box.createVerticalStrut(40));
-      var2.add(var4);
-      var2.add(Box.createVerticalStrut(80));
-      this.backgroundPanel.add(var2);
+   public EntryScreen$EntryScreenPanel(String var1) {
+      this.loadImage(var1);
+      this.startScrolling();
    }
 
-   private void startGame() {
-      this.backgroundPanel.stopScrolling();
-      this.dispose();
-      JOptionPane.showMessageDialog((Component)null, "Game is starting...");
-   }
-
-   public static void main(String[] var0) {
-      SwingUtilities.invokeLater(() -> (new EntryScreen("ocean.png")).setVisible(true));
-   }
-
-   private static class EntryScreenPanel extends JPanel {
-      private Image backgroundImage;
-      private int offset = 0;
-      private Timer scrollTimer;
-      private final double scrollSpeed = 1.2;
-
-      public EntryScreenPanel(String var1) {
-         this.loadImage("Ocean.png");
-         this.startScrolling();
-      }
-
-      private void loadImage(String var1) {
-         try {
-            this.backgroundImage = (new ImageIcon(var1)).getImage();
-            if (this.backgroundImage == null) {
-               System.err.println("Could not load image: " + var1);
+   private void loadImage(String var1) {
+      try {
+         File var2 = new File("Ocean.png");
+         if (var2.exists()) {
+            this.backgroundImage = ImageIO.read(var2);
+         } else {
+            URL var3 = this.getClass().getResource(var1);
+            if (var3 != null) {
+               this.backgroundImage = ImageIO.read(var3);
+            } else {
+               System.err.println("Image not found: " + var1);
             }
-         } catch (Exception var3) {
-            var3.printStackTrace();
          }
 
+         if (this.backgroundImage == null) {
+            System.err.println("ImageIO could not decode: " + var1);
+         }
+      } catch (IOException var4) {
+         System.err.println("IOException while loading: " + var1);
+         var4.printStackTrace();
       }
 
-      private void startScrolling() {
-         this.scrollTimer = new Timer(16, new ActionListener() {
-            {
-               Objects.requireNonNull(EntryScreenPanel.this);
-            }
+   }
 
-            public void actionPerformed(ActionEvent var1) {
-               EntryScreenPanel var10000 = EntryScreenPanel.this;
-               var10000.offset = (int)((double)var10000.offset - 1.2);
-               if (EntryScreenPanel.this.backgroundImage != null && EntryScreenPanel.this.offset <= -EntryScreenPanel.this.backgroundImage.getWidth((ImageObserver)null)) {
-                  var10000 = EntryScreenPanel.this;
-                  var10000.offset += EntryScreenPanel.this.backgroundImage.getWidth((ImageObserver)null);
-               }
-
-               EntryScreenPanel.this.repaint();
-            }
+   private void startScrolling() {
+      if (this.backgroundImage != null) {
+         this.scrollTimer = new Timer(16, (var1) -> {
+            this.offset -= this.scrollSpeed;
+            this.repaint();
          });
          this.scrollTimer.start();
       }
+   }
 
-      public void stopScrolling() {
-         if (this.scrollTimer != null) {
-            this.scrollTimer.stop();
-         }
-
+   public void stopScrolling() {
+      if (this.scrollTimer != null) {
+         this.scrollTimer.stop();
       }
 
-      protected void paintComponent(Graphics var1) {
-         super.paintComponent(var1);
-         if (this.backgroundImage != null) {
-            int var2 = this.getWidth();
-            int var3 = this.getHeight();
-            int var4 = this.backgroundImage.getWidth((ImageObserver)null);
-            var1.drawImage(this.backgroundImage, this.offset, 0, var4, var3, this);
-            if (this.offset + var4 < var2) {
-               var1.drawImage(this.backgroundImage, this.offset + var4, 0, var4, var3, this);
+   }
+
+   protected void paintComponent(Graphics var1) {
+      super.paintComponent(var1);
+      if (this.backgroundImage != null) {
+         int var2 = this.getWidth();
+         int var3 = this.getHeight();
+         int var4 = this.backgroundImage.getWidth();
+         if (var4 > 0) {
+            int var5 = this.offset % var4;
+            if (var5 > 0) {
+               var5 -= var4;
             }
 
-            if (this.offset > 0) {
-               var1.drawImage(this.backgroundImage, this.offset - var4, 0, var4, var3, this);
+            for(int var6 = var5; var6 < var2; var6 += var4) {
+               var1.drawImage(this.backgroundImage, var6, 0, var4, var3, this);
             }
 
          }
