@@ -1,0 +1,134 @@
+// Source code is decompiled from a .class file using FernFlower decompiler (from Intellij IDEA).
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.GridBagLayout;
+import java.awt.Image;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.image.ImageObserver;
+import java.util.Objects;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+
+public class EntryScreen extends JFrame {
+   private final EntryScreenPanel backgroundPanel;
+
+   public EntryScreen(String var1) {
+      this.setTitle("Island Escapers - Main Menu");
+      this.setDefaultCloseOperation(3);
+      this.setSize(400, 400);
+      this.setLocationRelativeTo((Component)null);
+      this.backgroundPanel = new EntryScreenPanel("Ocean.png");
+      this.setContentPane(this.backgroundPanel);
+      this.backgroundPanel.setLayout(new GridBagLayout());
+      JPanel var2 = new JPanel();
+      var2.setOpaque(false);
+      var2.setLayout(new BoxLayout(var2, 1));
+      JLabel var3 = new JLabel("Island Escaper");
+      var3.setFont(new Font("Hellvetica", 1, 36));
+      var3.setForeground(Color.WHITE);
+      var3.setAlignmentX(0.5F);
+      var2.add(Box.createVerticalStrut(80));
+      var2.add(var3);
+      JButton var4 = new JButton("Play");
+      var4.setFont(new Font("Arial", 1, 20));
+      var4.setPreferredSize(new Dimension(200, 60));
+      var4.setMaximumSize(new Dimension(200, 60));
+      var4.setAlignmentX(0.5F);
+      var4.addActionListener((var1x) -> this.startGame());
+      var2.add(Box.createVerticalStrut(40));
+      var2.add(var4);
+      var2.add(Box.createVerticalStrut(80));
+      this.backgroundPanel.add(var2);
+   }
+
+   private void startGame() {
+      this.backgroundPanel.stopScrolling();
+      this.dispose();
+      JOptionPane.showMessageDialog((Component)null, "Game is starting...");
+   }
+
+   public static void main(String[] var0) {
+      SwingUtilities.invokeLater(() -> (new EntryScreen("ocean.png")).setVisible(true));
+   }
+
+   private static class EntryScreenPanel extends JPanel {
+      private Image backgroundImage;
+      private int offset = 0;
+      private Timer scrollTimer;
+      private final double scrollSpeed = 1.2;
+
+      public EntryScreenPanel(String var1) {
+         this.loadImage("Ocean.png");
+         this.startScrolling();
+      }
+
+      private void loadImage(String var1) {
+         try {
+            this.backgroundImage = (new ImageIcon(var1)).getImage();
+            if (this.backgroundImage == null) {
+               System.err.println("Could not load image: " + var1);
+            }
+         } catch (Exception var3) {
+            var3.printStackTrace();
+         }
+
+      }
+
+      private void startScrolling() {
+         this.scrollTimer = new Timer(16, new ActionListener() {
+            {
+               Objects.requireNonNull(EntryScreenPanel.this);
+            }
+
+            public void actionPerformed(ActionEvent var1) {
+               EntryScreenPanel var10000 = EntryScreenPanel.this;
+               var10000.offset = (int)((double)var10000.offset - 1.2);
+               if (EntryScreenPanel.this.backgroundImage != null && EntryScreenPanel.this.offset <= -EntryScreenPanel.this.backgroundImage.getWidth((ImageObserver)null)) {
+                  var10000 = EntryScreenPanel.this;
+                  var10000.offset += EntryScreenPanel.this.backgroundImage.getWidth((ImageObserver)null);
+               }
+
+               EntryScreenPanel.this.repaint();
+            }
+         });
+         this.scrollTimer.start();
+      }
+
+      public void stopScrolling() {
+         if (this.scrollTimer != null) {
+            this.scrollTimer.stop();
+         }
+
+      }
+
+      protected void paintComponent(Graphics var1) {
+         super.paintComponent(var1);
+         if (this.backgroundImage != null) {
+            int var2 = this.getWidth();
+            int var3 = this.getHeight();
+            int var4 = this.backgroundImage.getWidth((ImageObserver)null);
+            var1.drawImage(this.backgroundImage, this.offset, 0, var4, var3, this);
+            if (this.offset + var4 < var2) {
+               var1.drawImage(this.backgroundImage, this.offset + var4, 0, var4, var3, this);
+            }
+
+            if (this.offset > 0) {
+               var1.drawImage(this.backgroundImage, this.offset - var4, 0, var4, var3, this);
+            }
+
+         }
+      }
+   }
+}
