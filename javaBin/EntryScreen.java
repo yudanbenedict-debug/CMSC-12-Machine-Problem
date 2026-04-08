@@ -18,6 +18,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
+
 public class EntryScreen extends JFrame {
 
     private final ScrollingBackgroundPanel backgroundPanel;
