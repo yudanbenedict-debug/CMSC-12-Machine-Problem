@@ -183,6 +183,6 @@ public class Player extends Entity {
     
     public void die() {
         System.out.println("Game Over!");
-        // Reset position or handle game over
+        //added here for no reason
     }
 }
