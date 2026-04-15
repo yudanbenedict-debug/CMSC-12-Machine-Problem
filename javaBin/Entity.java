@@ -33,16 +33,18 @@ public abstract class Entity{
         velY += grav;
         y += velY;
     }
-    public void checkIfGrounded(int groundY){
-        if(this.y >= groundY){
-            this.y = groundY;
+    /* Found an issue where player randomly freezed mid air upon double jumping, fix:
+    the player’s y never becomes equal to or greater than (groundY - height) until actually
+    landing, this should stope the freezing*/
+    public void checkIfGrounded(int groundY){ 
+        if(this.y + height >= groundY){
+            this.y = groundY - height;
+            velY = 0;
             isGrounded = true;
-        }
-        else{
+        } else {
             isGrounded = false;
         }
-
-    }   
+    }
 
     //getters and setters
     // Position getters and setters
