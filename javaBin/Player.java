@@ -3,6 +3,9 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 
+import java.util.HaspMap;
+import java.util.Map;
+
 public class Player extends Entity {
     // Player stats
     private double health;
@@ -29,6 +32,14 @@ public class Player extends Entity {
     private boolean sp_loading;
     private boolean facingRight;  // Track which direction player is facing
 
+    // Effect Tracking
+    private Map<Item.EffectType, Integer> activeEffects = new HaspMap<>();
+    private int baseSpeed = 5;
+    private int currentSpeed = 5;
+    private boolean hasDoubleJump = false;
+    private boolean canDoubleJump = false;
+
+    
     public Player(int x, int y) {
         super(x, y, 30, 40); 
 
@@ -68,6 +79,7 @@ public class Player extends Entity {
     
     @Override
     public void update() {
+        updateEffects(); // update buff and debuff mechanic
         applyGravity();
         checkIfGrounded(550);  // Pass ground Y level
         x += velX;
@@ -129,12 +141,12 @@ public class Player extends Entity {
     
     // Movement methods
     public void moveLeft() {
-        velX = -5;
+        velX = -currentSpeed;
         facingRight = false;
     }
     
     public void moveRight() {
-        velX = 5;
+        velX = currentSpeed;
         facingRight = true;
     }
     
@@ -144,8 +156,12 @@ public class Player extends Entity {
     
     public void jump() {
         if (isGrounded) {
-            velY = -12;
+            velY = -14;
             isGrounded = false;
+            canDoubleJump = true; // allows doubke jump after the first jump
+        } else if (hasDoubleJump && canDoubleJump){
+            velY = -14;       // force of double jump is the same as noraml jump
+            canDoubleJump = false;
         }
     }
     
@@ -180,6 +196,59 @@ public class Player extends Entity {
             }
         }
     }
+
+    public void applyBuff(Item.EffectType type, int duration) {
+        int frames = (duration == 0) ? Integer.MAX_VALUE : duration * 60;
+        activeEffects.put(type, frames);
+    
+        if (type == Item.EffectType.SPEED_BOOST) {
+            currentSpeed = baseSpeed * 2;
+        } else if (type == Item.EffectType.DOUBLE_JUMP) {
+            hasDoubleJump = true;
+        } else if (type == Item.EffectType.INVINCIBILITY) {
+            // to add soon...
+        }
+}
+
+    public void applyDebuff(Item.EffectType type, int duration) {
+        int frames = (duration == 0) ? Integer.MAX_VALUE : duration * 60;
+        activeEffects.put(type, frames);
+        
+        if (type == Item.EffectType.DEBUFF_SLOWNESS) {
+            currentSpeed = baseSpeed / 2;
+        } else if (type == Item.EffectType.DEBUFF_REVERSE_CONTROLS) {
+            // to add soon...
+        }
+}
+
+    private void updateEffects() {
+    // Use a copy of entry set to avoid concurrent modification
+    for (Map.Entry<Item.EffectType, Integer> entry : new HashMap<>(activeEffects).entrySet()) {
+        Item.EffectType type = entry.getKey();
+        int remaining = entry.getValue();
+        
+        if (remaining == Integer.MAX_VALUE) {
+            continue; // permanent effect stays
+        }
+        
+        if (remaining <= 1) {
+            revertEffect(type);
+            activeEffects.remove(type);
+        } else {
+            activeEffects.put(type, remaining - 1);
+        }
+}
+
+    private void revertEffect(Item.EffectType type) {
+        if (type == Item.EffectType.SPEED_BOOST) {
+            currentSpeed = baseSpeed;
+        } else if (type == Item.EffectType.DOUBLE_JUMP) {
+            hasDoubleJump = false;
+        } else if (type == Item.EffectType.DEBUFF_SLOWNESS) {
+            currentSpeed = baseSpeed;
+        } else if (type == Item.EffectType.DEBUFF_REVERSE_CONTROLS) {
+            // to add soon...
+        }
     
     public void die() {
         System.out.println("Game Over!");
