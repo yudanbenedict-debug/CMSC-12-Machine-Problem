@@ -1,188 +1,181 @@
-import java.awt.Graphics;
-import java.awt.Color;
 import java.awt.image.BufferedImage;
-import javax.imageio.ImageIO;
+import java.util.HashMap;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 
-public class Player extends Entity {
-    // Player stats
-    private double health;
-    private int lives;
-    private int coins;
-    private int score;
-    private double damage;
-
-    // Animation
-    private int a_time;
-    private int a_frame;
-    private boolean walkingAnimation;
-    
-    // Sprites for player
-    private BufferedImage sp_left_S;
-    private BufferedImage sp_left_w1;
-    private BufferedImage sp_left_w2;
-    private BufferedImage sp_right_S;
-    private BufferedImage sp_right_w1;
-    private BufferedImage sp_right_w2;
-    
-    // Current sprite
-    private BufferedImage c_sp;
-    private boolean sp_loading;
-    private boolean facingRight;  // Track which direction player is facing
-
-    public Player(int x, int y) {
-        super(x, y, 30, 40); 
-
-        health = 10;
-        lives = 3;
-        coins = 0;
-        score = 0;
-        damage = 2;
-        
-        this.a_frame = 10;
-        this.a_time = 0;
-        this.walkingAnimation = true;
-        this.facingRight = true;
-        
-        sp_loading = true;
-        loadSprites();
-        
-        c_sp = sp_right_S;
-    }
-    
-    // Load sprites
-    public void loadSprites() {
-        try {
-            sp_left_S = ImageIO.read(getClass().getResource("/sp_left_S.png"));
+/*
+    spire loading: 
+     sp_left_S = ImageIO.read(getClass().getResource("/sp_left_S.png"));
             sp_left_w1 = ImageIO.read(getClass().getResource("/sp_left_w1.png"));
             sp_left_w2 = ImageIO.read(getClass().getResource("/sp_left_w2.png"));
             sp_right_S = ImageIO.read(getClass().getResource("/sp_right_S.png"));
             sp_right_w1 = ImageIO.read(getClass().getResource("/sp_right_w1.png"));
             sp_right_w2 = ImageIO.read(getClass().getResource("/sp_right_w2.png"));
-            sp_loading = false;  // Set to false after successful load
-            c_sp = sp_right_S;
-        } catch (Exception e) {
-            System.out.println("Failed to load sprites: " + e.getMessage());
-            sp_loading = false;
-        }
-    }
+*/  
+
+//STILL NO CATCHER HERE ADD AN EXCEPTION CLASS PLEASE!!!!!!!!!!!!!!!!
+
+public class Player extends LivingEntity{
+
+    private boolean facingRight = true;
+
+    private boolean movingLeft;
+    private boolean movingRight;
+    private boolean movingUp;
+    private boolean movingDown;
+
+    private boolean isJumping;
+    private boolean running;
+    protected boolean isGrounded;
+
+    //attacking time will be in ms.
+    private boolean isAttacking;
+    private long lastAttackTime;
+    private int attackCoolDown;
     
+    private float velX;
+    private float velY;
+    private float gravity;
+
+    private int score;
+    private int goldCount;
+
+    //subject to changes for animation
+
+    private HashMap<String, Animation> animations = new HashMap<>();
+    private String currentState = "idle";
+    // private Animation walkingAnimation;
+    // private Animation idleAnimation;
+    // private Animation jumpAnimation;
+    // private Animation fallAnimation;
+    // private Animation rollingAnimation;
+    // private Animation ledgegrabAnimation;
+
+    private Animation currentAnimation;
+
+    public Player(float velX, float velY, float x, float y){
+        super(x, y, 32, 48, 20.0f, 5.0f, 20.0f, 10.0f);
+        this.velX = velX;
+        this.velY = velY;
+        this.goldCount = 0;
+        this.score = 0;
+        this.attackCoolDown = 400; //400ms
+        this.isAttacking = false;
+        this.running = false;
+        this.isJumping = false;
+        this.gravity = 0.75f;
+        initialize();
+        //initalize animation here
+
+
+    }
+
+    private void initialize(){
+         // private Animation walkingAnimation;
+        // private Animation idleAnimation;
+        // private Animation jumpAnimation;
+        // private Animation fallAnimation;
+        // private Animation rollingAnimation;
+        // private Animation ledgegrabAnimation;
+        BufferedImage[] walkFrames;
+        BufferedImage[] idleFrames;
+        BufferedImage[] jumpFrames;
+        BufferedImage[] fallFrames;
+        BufferedImage[] rollingFrames;
+        BufferedImage[] ledgegrabFrames;
+
+        animations.put("walk", new Animation(walkFrames, 6, true));
+        animations.put("idle", new Animation(idleFrames, 6, true));
+        animations.put("jump", new Animation(jumpFrames, 6, false));
+        animations.put("fall", new Animation(fallFrames, 6, true));
+        animations.put("rolling", new Animation(rollingFrames, 8, false));
+        animations.put("ledgegrab", new Animation(ledgegrabFrames, 8, false));
+
+        
+    }
+    //sprite loading
+    
+    public void jump(){
+        isJumping = true;
+    }
+    //gravity logic
     @Override
-    public void update() {
-        applyGravity();
-        checkIfGrounded(550);  // Pass ground Y level
+    public void update(){
+        //passing movement logic (if moving left or right)
+        if(movingLeft){ velX = -walk_speed; facingRight = true;}
+        if(movingRight){ velX = walk_speed; facingRight = false;}
         x += velX;
-        
-        // Keep on screen
-        if (x < 0) x = 0;
-        if (x + width > 800) x = 800 - width;
-        
-        // Update animation based on movement
-        updateAnimation();
-    }
-    
-    private void updateAnimation() {
-        // Check if moving
-        if (velX != 0 && isGrounded) {
-            a_time++;
-            if (a_time >= a_frame) {
-                a_time = 0;
-                walkingAnimation = !walkingAnimation;
-                
-                // Set walking sprite based on direction
-                if (velX > 0) {
-                    facingRight = true;
-                    if (walkingAnimation) {
-                        c_sp = sp_right_w1;
-                    } else {
-                        c_sp = sp_right_w2;
-                    }
-                } else if (velX < 0) {
-                    facingRight = false;
-                    if (walkingAnimation) {
-                        c_sp = sp_left_w1;
-                    } else {
-                        c_sp = sp_left_w2;
-                    }
-                }
-            }
-        } else {
-            // Not moving - use standing sprite
-            if (facingRight) {
-                c_sp = sp_right_S;
-            } else {
-                c_sp = sp_left_S;
-            }
-            a_time = 0;
+
+        //apply gravity
+        velY += gravity;
+        if(velY >= 20){
+            velY = 20;
         }
-    }
-    
-    @Override
-    public void draw(Graphics g) {
-        if (c_sp != null) {
-            g.drawImage(c_sp, x, y, width, height, null);
-        } else {
-            // Fallback rectangle
-            g.setColor(Color.RED);
-            g.fillRect(x, y, width, height);
-        }
-    }
-    
-    // Movement methods
-    public void moveLeft() {
-        velX = -5;
-        facingRight = false;
-    }
-    
-    public void moveRight() {
-        velX = 5;
-        facingRight = true;
-    }
-    
-    public void stop() {
-        velX = 0;
-    }
-    
-    public void jump() {
-        if (isGrounded) {
-            velY = -12;
+        y += velY;
+
+        if(isGrounded && isJumping){
+            velY = jump_height;
             isGrounded = false;
         }
+        isJumping = false;
+
+        isGrounded = false;
+
+        updateAnimation();
+
+
     }
-    
-    //Getters and setters
-    public double getHealth() { return health; }
-    public void setHealth(double health) { this.health = health; }
-    
-    public int getLives() { return lives; }
-    public void setLives(int lives) { this.lives = lives; }
-    
-    public int getCoins() { return coins; }
-    public void setCoins(int coins) { this.coins = coins; }
-    
-    public int getScore() { return score; }
-    public void setScore(int score) { this.score = score; }
-    
-    public double getDamage() { return damage; }
-    public void setDamage(double damage) { this.damage = damage; }
-    
-    public void addCoins(int amount) {
-        this.coins += amount;
-        this.score += amount * 100;
-    }
-    
-    public void takeDamage(double amount) {
-        this.health -= amount;
-        if (this.health <= 0) {
-            this.lives--;
-            this.health = 10;
-            if (this.lives <= 0) {
-                die();
-            }
+
+    private void updateAnimation(){
+        String curState = "idle";
+        //check if grounded
+        if(!isGrounded){
+            curState = (velX < 0) ? "jump" : "fall";
+        }
+        //if moving 
+        else if(Math.abs(velX) > 0.5f){
+            curState = "walk";
+        }
+        //compare
+        if(!curState.equals(currentState)){
+            curState = currentState;
+            currentAnimation = animations.get(curState);
+
+
         }
     }
-    
-    public void die() {
-        System.out.println("Game Over!");
-        //added here for no reason
+
+    @Override
+    public void draw(Graphics g){
+        
+        if(currentAnimation == null) return;
+        
+        BufferedImage frame = currentAnimation.getCurrentFrame();
+        if (frame == null) return;
+
+        int drawX = (int)x;
+        int drawWidth = (int)width;
+        //change the orientation
+        if(!facingRight){
+            drawX += drawWidth;
+            drawWidth = -drawWidth;
+        }
+
+        g.drawImage(frame, drawX, (int)y, drawWidth, (int)height, null);
+        ////walking sprites; 3 frames, withing 60 frames, 5 full rotations.
+        //falling sprites; 3 frames, 2 frames for landing, 1 frame for raising arms. 
+
+        //
     }
+    //getters and setters.
+    public boolean isGrounded(){
+        return isGrounded;
+    }
+    @Override
+    public void onDeath(){
+        
+    }
+
+
+
 }
