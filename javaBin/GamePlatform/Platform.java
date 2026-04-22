@@ -42,10 +42,9 @@ public class Platform {
 
         switch(plat_type){
             
-            case "ground_dirt" : 
+            case METAL : 
             //note: cameraX is not the final pos for the platform.
                 ground = new ImageIcon("C:\\Users\\Administrator\\Desktop\\HAHAH\\CMSC-12-Machine-Problem\\Resources\\ground.jpg").getImage();
-                pl_graphics.drawImage(ground, cameraX, pos_y, plat_width, plat_height, null);  
                     
                 break;
             case "brick" :

@@ -36,6 +36,9 @@ public class Level {
     public void update(){
 
     }
+    public void loadGame(){
+        
+    }
     public int saveGame(){
         try{
             File saveFile = new File("javaBin/LevelFile/level.txt");
