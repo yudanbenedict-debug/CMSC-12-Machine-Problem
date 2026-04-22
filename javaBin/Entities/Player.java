@@ -1,5 +1,9 @@
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.HashMap;
+
+import javax.imageio.ImageIO;
+
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
@@ -50,6 +54,12 @@ public class Player extends LivingEntity{
     // private Animation fallAnimation;
     // private Animation rollingAnimation;
     // private Animation ledgegrabAnimation;
+    private BufferedImage[] walkFrames;
+    private BufferedImage[] idleFrames;
+    private BufferedImage[] jumpFrames;
+    private BufferedImage[] fallFrames;
+    private BufferedImage[] rollingFrames;
+    private BufferedImage[] ledgegrabFrames;
 
     private Animation currentAnimation;
 
@@ -77,12 +87,28 @@ public class Player extends LivingEntity{
         // private Animation fallAnimation;
         // private Animation rollingAnimation;
         // private Animation ledgegrabAnimation;
-        BufferedImage[] walkFrames;
-        BufferedImage[] idleFrames;
-        BufferedImage[] jumpFrames;
-        BufferedImage[] fallFrames;
-        BufferedImage[] rollingFrames;
-        BufferedImage[] ledgegrabFrames;
+        try{
+        walkFrames = new BufferedImage[8];
+        walkFrames[0] = ImageIO.read(getClass().getResource("Resources/00_character_walk.png"));
+        walkFrames[1] = ImageIO.read(getClass().getResource("Resources/01_character_walk.png"));
+        walkFrames[2] = ImageIO.read(getClass().getResource("Resources/02_character_walk.png"));
+        walkFrames[3] = ImageIO.read(getClass().getResource("Resources/03_character_walk.png"));
+        walkFrames[4] = ImageIO.read(getClass().getResource("Resources/04_character_walk.png"));
+        walkFrames[5] = ImageIO.read(getClass().getResource("Resources/05_character_walk.png"));
+        walkFrames[6] = ImageIO.read(getClass().getResource("Resources/06_character_walk.png"));
+        walkFrames[7] = ImageIO.read(getClass().getResource("Resources/07_character_walk.png"));
+
+        idleFrames = new BufferedImage[2];
+
+        jumpFrames = new BufferedImage[3];
+        fallFrames = new BufferedImage[3];
+        rollingFrames = new BufferedImage[3];
+        ledgegrabFrames = new BufferedImage[3];
+
+        }catch(IOException e){
+            e.printStackTrace();
+            System.out.print("Broken stuff");
+        }
 
         animations.put("walk", new Animation(walkFrames, 6, true));
         animations.put("idle", new Animation(idleFrames, 6, true));
@@ -102,8 +128,8 @@ public class Player extends LivingEntity{
     @Override
     public void update(){
         //passing movement logic (if moving left or right)
-        if(movingLeft){ velX = -walk_speed; facingRight = true;}
-        if(movingRight){ velX = walk_speed; facingRight = false;}
+        if(movingLeft){ velX = -walk_speed; facingRight = false;}
+        if(movingRight){ velX = walk_speed; facingRight = true;}
         x += velX;
 
         //apply gravity
@@ -138,7 +164,7 @@ public class Player extends LivingEntity{
         }
         //compare
         if(!curState.equals(currentState)){
-            curState = currentState;
+            currentState = curState;
             currentAnimation = animations.get(curState);
 
 
