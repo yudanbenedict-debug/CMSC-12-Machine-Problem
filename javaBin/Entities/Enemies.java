@@ -1,3 +1,4 @@
+
 package Entities;
 
 import java.awt.Graphics;
@@ -85,3 +86,5 @@ public abstract class Enemies extends LivingEntity{
 
     
 }
+
+

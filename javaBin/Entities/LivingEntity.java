@@ -1,3 +1,4 @@
+package Entities;
 import java.awt.Graphics;
 
 public abstract class LivingEntity extends Entity {
@@ -23,7 +24,8 @@ public abstract class LivingEntity extends Entity {
         //
     }
     //take damage.. add catcherss
-    public void takeDamage(float damage) throws... {
+    //add throiws herer
+    public void takeDamage(float damage) {
         this.health = this.health - damage;
 
         if(health <= 0){

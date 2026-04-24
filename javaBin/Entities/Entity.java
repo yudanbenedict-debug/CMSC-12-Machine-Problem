@@ -1,3 +1,4 @@
+package Entities;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.awt.Rectangle;
