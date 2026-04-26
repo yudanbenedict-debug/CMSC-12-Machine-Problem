@@ -1,26 +1,28 @@
 package Entities;
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
 
 import javax.imageio.ImageIO;
 
 import java.awt.Graphics;
-import java.awt.Graphics2D;
+import java.awt.Rectangle;
 
-/*
-    spire loading: 
-     sp_left_S = ImageIO.read(getClass().getResource("/sp_left_S.png"));
-            sp_left_w1 = ImageIO.read(getClass().getResource("/sp_left_w1.png"));
-            sp_left_w2 = ImageIO.read(getClass().getResource("/sp_left_w2.png"));
-            sp_right_S = ImageIO.read(getClass().getResource("/sp_right_S.png"));
-            sp_right_w1 = ImageIO.read(getClass().getResource("/sp_right_w1.png"));
-            sp_right_w2 = ImageIO.read(getClass().getResource("/sp_right_w2.png"));
-*/  
+public class Player extends LivingEntity {
+    private static final int SPRITE_DRAW_Y_OFFSET = 48;
 
-//STILL NO CATCHER HERE ADD AN EXCEPTION CLASS PLEASE!!!!!!!!!!!!!!!!
-
-public class Player extends LivingEntity{
+    // ── Hitbox constants ─────────────────────────────────────────────────────────
+    // The sprite sheet is 112×168 px but the visible character occupies only
+    // the lower portion.  SPRITE_DRAW_Y_OFFSET (48) pushes the image down when
+    // drawing, so the logical hitbox starts 48 px into the sprite height.
+    // These values are exposed via getHitboxOffsetY() / getHitboxHeight() so
+    // Level.java can correctly snap the player onto platforms.
+    private static final int HITBOX_OFFSET_Y = SPRITE_DRAW_Y_OFFSET; // 48 px from top of entity
+    private static final int HITBOX_HEIGHT   = 168 - HITBOX_OFFSET_Y; // remaining 120 px
 
     private boolean facingRight = true;
 
@@ -33,11 +35,10 @@ public class Player extends LivingEntity{
     private boolean running;
     protected boolean isGrounded;
 
-    //attacking time will be in ms.
     private boolean isAttacking;
     private long lastAttackTime;
     private int attackCoolDown;
-    
+
     private float velX;
     private float velY;
     private float gravity;
@@ -45,16 +46,9 @@ public class Player extends LivingEntity{
     private int score;
     private int goldCount;
 
-    //subject to changes for animation
-
     private HashMap<String, Animation> animations = new HashMap<>();
     private String currentState = "idle";
-    // private Animation walkingAnimation;
-    // private Animation idleAnimation;
-    // private Animation jumpAnimation;
-    // private Animation fallAnimation;
-    // private Animation rollingAnimation;
-    // private Animation ledgegrabAnimation;
+
     private BufferedImage[] walkFrames;
     private BufferedImage[] idleFrames;
     private BufferedImage[] jumpFrames;
@@ -63,146 +57,241 @@ public class Player extends LivingEntity{
     private BufferedImage[] ledgegrabFrames;
 
     private Animation currentAnimation;
+    private static final int JUMP_BUFFER_FRAMES = 8;
+    private static final int COYOTE_FRAMES = 6;
+    private int jumpBufferFrames;
+    private int coyoteFrames;
 
-    public Player(float velX, float velY, float x, float y){
-        super(x, y, 32, 48, 20.0f, 5.0f, 20.0f, 10.0f);
+    public Player(float velX, float velY, float x, float y) {
+        super(x, y, 112, 168, 20.0f, 5.0f, 6.0f, 14.0f);
         this.velX = velX;
         this.velY = velY;
         this.goldCount = 0;
         this.score = 0;
-        this.attackCoolDown = 400; //400ms
+        this.attackCoolDown = 400;
         this.isAttacking = false;
         this.running = false;
         this.isJumping = false;
-        this.gravity = 0.75f;
+        this.gravity = 0.65f;
+        this.jumpBufferFrames = 0;
+        this.coyoteFrames = 0;
         initialize();
-        //initalize animation here
-
-
     }
 
-    private void initialize(){
-         // private Animation walkingAnimation;
-        // private Animation idleAnimation;
-        // private Animation jumpAnimation;
-        // private Animation fallAnimation;
-        // private Animation rollingAnimation;
-        // private Animation ledgegrabAnimation;
-        try{
-        walkFrames = new BufferedImage[8];
-        walkFrames[0] = ImageIO.read(getClass().getResource("Resources/00_character_walk.png"));
-        walkFrames[1] = ImageIO.read(getClass().getResource("Resources/01_character_walk.png"));
-        walkFrames[2] = ImageIO.read(getClass().getResource("Resources/02_character_walk.png"));
-        walkFrames[3] = ImageIO.read(getClass().getResource("Resources/03_character_walk.png"));
-        walkFrames[4] = ImageIO.read(getClass().getResource("Resources/04_character_walk.png"));
-        walkFrames[5] = ImageIO.read(getClass().getResource("Resources/05_character_walk.png"));
-        walkFrames[6] = ImageIO.read(getClass().getResource("Resources/06_character_walk.png"));
-        walkFrames[7] = ImageIO.read(getClass().getResource("Resources/07_character_walk.png"));
+    private void initialize() {
+        BufferedImage sharedFrame = loadWalkBaseFrame();
+        walkFrames     = loadWalkAnimationFrames(sharedFrame);
+        idleFrames     = new BufferedImage[]{ sharedFrame };
+        jumpFrames     = new BufferedImage[]{ sharedFrame };
+        fallFrames     = new BufferedImage[]{ sharedFrame };
+        rollingFrames  = new BufferedImage[]{ sharedFrame };
+        ledgegrabFrames= new BufferedImage[]{ sharedFrame };
 
-        idleFrames = new BufferedImage[2];
-
-        jumpFrames = new BufferedImage[3];
-        fallFrames = new BufferedImage[3];
-        rollingFrames = new BufferedImage[3];
-        ledgegrabFrames = new BufferedImage[3];
-
-        }catch(IOException e){
-            e.printStackTrace();
-            System.out.print("Broken stuff");
-        }
-
-        animations.put("walk", new Animation(walkFrames, 6, true));
-        animations.put("idle", new Animation(idleFrames, 6, true));
-        animations.put("jump", new Animation(jumpFrames, 6, false));
-        animations.put("fall", new Animation(fallFrames, 6, true));
-        animations.put("rolling", new Animation(rollingFrames, 8, false));
-        animations.put("ledgegrab", new Animation(ledgegrabFrames, 8, false));
-
-        
+        animations.put("walk",      new Animation(walkFrames,      4,  true));
+        animations.put("idle",      new Animation(idleFrames,      10, true));
+        animations.put("jump",      new Animation(jumpFrames,      8,  false));
+        animations.put("fall",      new Animation(fallFrames,      8,  true));
+        animations.put("rolling",   new Animation(rollingFrames,   8,  false));
+        animations.put("ledgegrab", new Animation(ledgegrabFrames, 8,  false));
+        currentAnimation = animations.get("idle");
     }
-    //sprite loading
-    
-    public void jump(){
+
+    public void jump() {
         isJumping = true;
+        jumpBufferFrames = JUMP_BUFFER_FRAMES;
     }
-    //gravity logic
+
     @Override
-    public void update(){
-        //passing movement logic (if moving left or right)
-        if(movingLeft){ velX = -walk_speed; facingRight = false;}
-        if(movingRight){ velX = walk_speed; facingRight = true;}
+    public void update() {
+        velX = 0;
+        if (movingLeft)  { velX = -walk_speed; facingRight = false; }
+        if (movingRight) { velX =  walk_speed; facingRight = true;  }
         x += velX;
 
-        //apply gravity
-        velY += gravity;
-        if(velY >= 20){
-            velY = 20;
+        if (isGrounded) {
+            coyoteFrames = COYOTE_FRAMES;
+        } else if (coyoteFrames > 0) {
+            coyoteFrames--;
         }
-        y += velY;
 
-        if(isGrounded && isJumping){
-            velY = jump_height;
+        if (jumpBufferFrames > 0) {
+            jumpBufferFrames--;
+        }
+
+        if (coyoteFrames > 0 && jumpBufferFrames > 0) {
+            velY = -Math.abs(jump_height);
             isGrounded = false;
+            coyoteFrames = 0;
+            jumpBufferFrames = 0;
         }
         isJumping = false;
 
-        isGrounded = false;
+        velY += gravity;
+        if (velY >= 20) { velY = 20; }
+        y += velY;
 
         updateAnimation();
-
-
     }
 
-    private void updateAnimation(){
+    private void updateAnimation() {
         String curState = "idle";
-        //check if grounded
-        if(!isGrounded){
-            curState = (velX < 0) ? "jump" : "fall";
-        }
-        //if moving 
-        else if(Math.abs(velX) > 0.5f){
+        if (!isGrounded) {
+            curState = (velY < 0) ? "jump" : "fall";
+        } else if (Math.abs(velX) > 0.5f) {
             curState = "walk";
         }
-        //compare
-        if(!curState.equals(currentState)){
+        if (!curState.equals(currentState)) {
             currentState = curState;
             currentAnimation = animations.get(curState);
-
-
+        }
+        if (currentAnimation != null) {
+            currentAnimation.animate();
         }
     }
 
     @Override
-    public void draw(Graphics g){
-        
-        if(currentAnimation == null) return;
-        
+    public void draw(Graphics g) {
+        if (currentAnimation == null) return;
         BufferedImage frame = currentAnimation.getCurrentFrame();
         if (frame == null) return;
 
-        int drawX = (int)x;
-        int drawWidth = (int)width;
-        //change the orientation
-        if(!facingRight){
-            drawX += drawWidth;
+        int drawX     = (int) x;
+        int drawWidth = (int) width;
+        if (!facingRight) {
+            drawX    += drawWidth;
             drawWidth = -drawWidth;
         }
-
-        g.drawImage(frame, drawX, (int)y, drawWidth, (int)height, null);
-        ////walking sprites; 3 frames, withing 60 frames, 5 full rotations.
-        //falling sprites; 3 frames, 2 frames for landing, 1 frame for raising arms. 
-
-        //
+        g.drawImage(frame, drawX, (int) y + SPRITE_DRAW_Y_OFFSET, drawWidth, (int) height, null);
     }
-    //getters and setters.
-    public boolean isGrounded(){
-        return isGrounded;
+
+    // ── Hitbox helpers (used by Level.handleCollisions) ──────────────────────────
+
+    /**
+     * Returns the Y offset (in pixels) from the entity's top edge (this.y) to
+     * the top of its logical collision hitbox.
+     * <p>
+     * Because the sprite sheet has blank padding above the character equal to
+     * {@code SPRITE_DRAW_Y_OFFSET}, the hitbox starts at the same offset so
+     * that visual and physical positions stay in sync.
+     */
+    public int getHitboxOffsetY() {
+        return HITBOX_OFFSET_Y;
     }
+
+    /**
+     * Returns the pixel height of the logical collision hitbox (i.e. the
+     * portion of the sprite that actually represents the character's body).
+     */
+    public int getHitboxHeight() {
+        return HITBOX_HEIGHT;
+    }
+
+    /**
+     * Returns the collision rectangle aligned to the visible character body,
+     * taking the hitbox offset into account.
+     */
     @Override
-    public void onDeath(){
-        
+    public Rectangle getBounds() {
+        return new Rectangle(
+            (int) x,
+            (int) y + HITBOX_OFFSET_Y,
+            (int) width,
+            HITBOX_HEIGHT
+        );
     }
 
+    // ── Getters / setters ────────────────────────────────────────────────────────
 
+    public boolean isGrounded() { return isGrounded; }
 
+    public float getHealth() { return health; }
+
+    public float getVerticalVelocity() { return velY; }
+    public void  setVerticalVelocity(float velY) { this.velY = velY; }
+
+    public void setGrounded(boolean grounded) { this.isGrounded = grounded; }
+
+    public void applyEngineState(boolean moveLeft, boolean moveRight, boolean jumpPressed) {
+        this.movingLeft  = moveLeft;
+        this.movingRight = moveRight;
+        if (jumpPressed) jump();
+    }
+
+    public void applyBuff(String buffType, int durationSeconds) {
+        if (buffType == null) return;
+        switch (buffType) {
+            case "SPEED_BOOST":   walk_speed  = Math.max(1.0f, walk_speed  + 2.0f); break;
+            case "DOUBLE_JUMP":   jump_height = Math.max(1.0f, jump_height + 5.0f); break;
+            case "INVINCIBILITY": break; // placeholder
+            default: break;
+        }
+    }
+
+    public void applyDebuff(String buffType, int durationSeconds) {
+        if (buffType == null) return;
+        switch (buffType) {
+            case "DEBUFF_SLOWNESS":
+                walk_speed = Math.max(1.0f, walk_speed - 2.0f);
+                break;
+            case "DEBUFF_REVERSE_CONTROLS":
+                boolean temp = movingLeft;
+                movingLeft  = movingRight;
+                movingRight = temp;
+                break;
+            default: break;
+        }
+    }
+
+    // ── Sprite loading ───────────────────────────────────────────────────────────
+
+    private BufferedImage loadWalkBaseFrame() {
+        BufferedImage img;
+        img = loadFrameOrNull("/Resources/00_character_walk.png");    if (img != null) return img;
+        img = loadFrameFromFile("Resources/00_character_walk.png");   if (img != null) return img;
+        img = loadFrameFromFile("../Resources/00_character_walk.png");if (img != null) return img;
+        img = loadFrameFromFile("00_character_walk.png");             if (img != null) return img;
+        return createFallbackFrame();
+    }
+
+    private BufferedImage[] loadWalkAnimationFrames(BufferedImage fallbackFrame) {
+        BufferedImage[] frames = new BufferedImage[8];
+        for (int i = 0; i < frames.length; i++) {
+            String name = String.format("%02d_character_walk.png", i);
+            BufferedImage f = loadFrameOrNull("/Resources/" + name);
+            if (f == null) f = loadFrameFromFile("Resources/" + name);
+            if (f == null) f = loadFrameFromFile("../Resources/" + name);
+            if (f == null) f = loadFrameFromFile(name);
+            frames[i] = (f != null) ? f : fallbackFrame;
+        }
+        return frames;
+    }
+
+    private BufferedImage loadFrameOrNull(String resourcePath) {
+        try {
+            URL url = getClass().getResource(resourcePath);
+            return (url != null) ? ImageIO.read(url) : null;
+        } catch (IOException e) { return null; }
+    }
+
+    private BufferedImage loadFrameFromFile(String path) {
+        try {
+            File f = new File(path);
+            return f.exists() ? ImageIO.read(f) : null;
+        } catch (IOException e) { return null; }
+    }
+
+    private BufferedImage createFallbackFrame() {
+        BufferedImage fallback = new BufferedImage((int) width, (int) height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = fallback.createGraphics();
+        g2.setColor(new Color(45, 95, 250));
+        g2.fillRect(0, 0, (int) width, (int) height);
+        g2.setColor(Color.WHITE);
+        g2.fillRect(6, 10, 6, 6);
+        g2.fillRect((int) width - 12, 10, 6, 6);
+        g2.dispose();
+        return fallback;
+    }
+
+    @Override
+    public void onDeath() { }
 }
