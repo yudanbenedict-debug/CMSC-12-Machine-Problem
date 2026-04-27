@@ -18,6 +18,8 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
+import Exceptions.ResourceLoadException;
+import GameCreation.Game;
 
 public class EntryScreen extends JFrame {
 
@@ -60,8 +62,8 @@ public class EntryScreen extends JFrame {
     private void startGame() {
         backgroundPanel.stopScrolling();
         dispose();
-        JOptionPane.showMessageDialog(null, "Game is starting...");
-        // TODO: Launch the actual game here yall...
+        JOptionPane.showMessageDialog(null, "Launching test level...");
+        Game.launch();
     }
 
    
@@ -72,7 +74,11 @@ public class EntryScreen extends JFrame {
         private int scrollSpeed = 2;
 
         public ScrollingBackgroundPanel() {
-            loadImage();
+            try {
+                loadImage();
+            } catch (ResourceLoadException ignored) {
+                ocean = null;
+            }
             startScrolling();
         }
 
@@ -83,34 +89,30 @@ public class EntryScreen extends JFrame {
         URL url = getClass().getResource("/Ocean.png");
         if (url != null) {
             ocean = ImageIO.read(url);
-            System.out.println("Loaded from classpath: " + url);
             return;
         }
         
         File file = new File("Resources/Ocean.png");
         if (file.exists()) {
             ocean = ImageIO.read(file);
-            System.out.println("Loaded from " + file.getAbsolutePath());
             return;
         }
         
         file = new File("../Resources/Ocean.png");
         if (file.exists()) {
             ocean = ImageIO.read(file);
-            System.out.println("Loaded from " + file.getAbsolutePath());
             return;
         }
         
         file = new File("Ocean.png");
         if (file.exists()) {
             ocean = ImageIO.read(file);
-            System.out.println("Loaded from " + file.getAbsolutePath());
             return;
         }
-        
-        System.err.println("Ocean.png not found in any expected location");
+
+        throw new ResourceLoadException("Ocean.png");
     } catch (Exception e) {
-        e.printStackTrace();
+        throw new ResourceLoadException("Ocean.png", e);
     }
 }
         private void startScrolling() {

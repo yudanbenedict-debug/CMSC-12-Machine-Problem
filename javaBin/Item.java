@@ -1,6 +1,9 @@
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
+import Entities.Entity;
+import Entities.Player;
+
 public class Item extends Entity {
 
     public enum EffectType {
@@ -21,9 +24,6 @@ public class Item extends Entity {
         this.sprite = sprite;
         this.duration = duration;
         this.isActive = true;
-
-        velX = 0;
-        velY = 0;
     }
 
     @Override
@@ -34,7 +34,7 @@ public class Item extends Entity {
     @Override
     public void draw(Graphics g) {
         if (isActive && sprite != null) {
-            g.drawImage(sprite, x, y, width, height, null);
+            g.drawImage(sprite, (int) x, (int) y, (int) width, (int) height, null);
         }
     }
 
@@ -43,9 +43,9 @@ public class Item extends Entity {
         
         
         if (buffType.name().startsWith("DEBUFF")) {
-            player.applyDebuff(buffType, duration);
+            player.applyDebuff(buffType.name(), duration);
         } else {
-            player.applyBuff(buffType, duration);
+            player.applyBuff(buffType.name(), duration);
         }
         
         isActive = false;  

@@ -24,6 +24,8 @@ public class Player extends LivingEntity {
     private static final int HITBOX_OFFSET_Y = SPRITE_DRAW_Y_OFFSET; // 48 px from top of entity
     private static final int HITBOX_HEIGHT   = 168 - HITBOX_OFFSET_Y; // remaining 120 px
 
+    private static final float SPRINT_MULTIPILIER = 1.6F;
+
     private boolean facingRight = true;
 
     private boolean movingLeft;
@@ -57,6 +59,7 @@ public class Player extends LivingEntity {
     private BufferedImage[] ledgegrabFrames;
 
     private Animation currentAnimation;
+    //coyote frames 
     private static final int JUMP_BUFFER_FRAMES = 8;
     private static final int COYOTE_FRAMES = 6;
     private int jumpBufferFrames;
@@ -80,10 +83,10 @@ public class Player extends LivingEntity {
 
     private void initialize() {
         BufferedImage sharedFrame = loadWalkBaseFrame();
-        walkFrames     = loadWalkAnimationFrames(sharedFrame);
-        idleFrames     = new BufferedImage[]{ sharedFrame };
-        jumpFrames     = new BufferedImage[]{ sharedFrame };
-        fallFrames     = new BufferedImage[]{ sharedFrame };
+        walkFrames     = loadImages("Player-Sprites/Player-Walk", "character_walk", 8, sharedFrame);
+        idleFrames     = loadImages("Player-Sprites/Player-Idle", "character_idle-", 6, sharedFrame);
+        jumpFrames     = loadImages("Player-Sprites/Player-Jump", "character_jump", 4, sharedFrame);
+        fallFrames     = loadImages("Player-Sprites/Player-Fall", "character_jump", 1, sharedFrame);
         rollingFrames  = new BufferedImage[]{ sharedFrame };
         ledgegrabFrames= new BufferedImage[]{ sharedFrame };
 
@@ -100,12 +103,25 @@ public class Player extends LivingEntity {
         isJumping = true;
         jumpBufferFrames = JUMP_BUFFER_FRAMES;
     }
+    public void sprint(){
+        if(isGrounded);
+
+    }
 
     @Override
     public void update() {
+        float currentSpeed;
+
+        if (running) {
+                currentSpeed = walk_speed * SPRINT_MULTIPILIER;
+        } else {
+            currentSpeed = walk_speed;
+        }
+        
+
         velX = 0;
-        if (movingLeft)  { velX = -walk_speed; facingRight = false; }
-        if (movingRight) { velX =  walk_speed; facingRight = true;  }
+        if (movingLeft)  { velX = -currentSpeed; facingRight = false; }
+        if (movingRight) { velX =  currentSpeed; facingRight = true;  }
         x += velX;
 
         if (isGrounded) {
@@ -164,32 +180,15 @@ public class Player extends LivingEntity {
         g.drawImage(frame, drawX, (int) y + SPRITE_DRAW_Y_OFFSET, drawWidth, (int) height, null);
     }
 
-    // ── Hitbox helpers (used by Level.handleCollisions) ──────────────────────────
-
-    /**
-     * Returns the Y offset (in pixels) from the entity's top edge (this.y) to
-     * the top of its logical collision hitbox.
-     * <p>
-     * Because the sprite sheet has blank padding above the character equal to
-     * {@code SPRITE_DRAW_Y_OFFSET}, the hitbox starts at the same offset so
-     * that visual and physical positions stay in sync.
-     */
     public int getHitboxOffsetY() {
         return HITBOX_OFFSET_Y;
     }
 
-    /**
-     * Returns the pixel height of the logical collision hitbox (i.e. the
-     * portion of the sprite that actually represents the character's body).
-     */
     public int getHitboxHeight() {
         return HITBOX_HEIGHT;
     }
 
-    /**
-     * Returns the collision rectangle aligned to the visible character body,
-     * taking the hitbox offset into account.
-     */
+    
     @Override
     public Rectangle getBounds() {
         return new Rectangle(
@@ -216,7 +215,7 @@ public class Player extends LivingEntity {
         this.movingRight = moveRight;
         if (jumpPressed) jump();
     }
-
+    //item logic still not finished
     public void applyBuff(String buffType, int durationSeconds) {
         if (buffType == null) return;
         switch (buffType) {
@@ -241,9 +240,9 @@ public class Player extends LivingEntity {
             default: break;
         }
     }
-
-    // ── Sprite loading ───────────────────────────────────────────────────────────
-
+    //sprite loading
+    //only walkanimation for now since the other sprites are still not uploaded
+    //for walk frames since it is pretty necessary
     private BufferedImage loadWalkBaseFrame() {
         BufferedImage img;
         img = loadFrameOrNull("/Resources/00_character_walk.png");    if (img != null) return img;
@@ -253,18 +252,26 @@ public class Player extends LivingEntity {
         return createFallbackFrame();
     }
 
-    private BufferedImage[] loadWalkAnimationFrames(BufferedImage fallbackFrame) {
-        BufferedImage[] frames = new BufferedImage[8];
-        for (int i = 0; i < frames.length; i++) {
-            String name = String.format("%02d_character_walk.png", i);
-            BufferedImage f = loadFrameOrNull("/Resources/" + name);
-            if (f == null) f = loadFrameFromFile("Resources/" + name);
-            if (f == null) f = loadFrameFromFile("../Resources/" + name);
-            if (f == null) f = loadFrameFromFile(name);
-            frames[i] = (f != null) ? f : fallbackFrame;
+    
+    private BufferedImage[] loadImages(String folderPath, String baseName, int frameCount, BufferedImage fallback) {
+        BufferedImage[] frames = new BufferedImage[frameCount];
+    
+        for (int i = 0; i < frameCount; i++) {
+            String fileName = String.format("%02d_%s.png", i, baseName);
+    
+            String fullPath = folderPath + "/" + fileName;
+            BufferedImage f = loadFrameOrNull("/Resources/" + fullPath); //Player-Sprites/Player-Walk
+            if (f == null) f = loadFrameFromFile("Resources/" + fullPath);
+            if (f == null) f = loadFrameFromFile("../Resources/" + fullPath);
+            if (f == null) f = loadFrameFromFile(fullPath);
+    
+            frames[i] = (f != null) ? f : fallback;
+            
         }
+    
         return frames;
     }
+    
 
     private BufferedImage loadFrameOrNull(String resourcePath) {
         try {
@@ -293,5 +300,7 @@ public class Player extends LivingEntity {
     }
 
     @Override
-    public void onDeath() { }
+    public void onDeath() { 
+        
+    }
 }

@@ -26,18 +26,10 @@ public abstract class Entity {
         return new Rectangle((int)x, (int)y, (int)width, (int)height);
     }
 
-    //setters/getters just incase we change the variable to private
-    // public float getX() { return x; }
-    // public void setX(float x) { this.x = x; }
-
-    // public float getY() { return y; }
-    // public void setY(float y) { this.y = y; }
-
-    // public float getWidth() { return width; }
-    // public float getHeight() { return height; }
-
-    // public BufferedImage getSprite() { return sprite; }
-    // public void setSprite(BufferedImage sprite) { 
-    //     this.sprite = sprite; 
-    // }
+    public float getX() { return x; }
+    public void setX(float x) { this.x = x; }
+    public float getY() { return y; }
+    public void setY(float y) { this.y = y; }
+    public float getWidth() { return width; }
+    public float getHeight() { return height; }
 }
