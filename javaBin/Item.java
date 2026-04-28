@@ -1,8 +1,7 @@
-import java.awt.Graphics;
-import java.awt.image.BufferedImage;
-
 import Entities.Entity;
 import Entities.Player;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
 
 public class Item extends Entity {
 
@@ -16,8 +15,10 @@ public class Item extends Entity {
 
     private EffectType buffType;
     private int duration = 5;      // in seconds (0 = permanent)
-    private boolean isActive;  // not needed for item itself, but for effect the on player
+    private boolean isActive; // not needed for item itself, but for effect the on player
 
+
+    
     public Item(int x, int y, BufferedImage sprite, int width, int height, EffectType buffType, int duration) {
         super(x, y, width, height);
         this.buffType = buffType;

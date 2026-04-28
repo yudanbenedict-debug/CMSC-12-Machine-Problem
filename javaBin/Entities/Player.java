@@ -3,6 +3,7 @@ package Entities;
 import SpriteLoading.SpriteLoader;
 
 import java.awt.Color;
+import Weapons.*;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -57,6 +58,7 @@ public class Player extends LivingEntity {
     private BufferedImage[] sprintingFrames;
     private BufferedImage[] rollingFrames;
     private BufferedImage[] sword_attack_frames;
+    private BufferedImage[] shootingFrames;
 
     private Animation currentAnimation;
     //coyote frames 
@@ -96,6 +98,7 @@ public class Player extends LivingEntity {
         animations.put("fall",      new Animation(fallFrames,      1,  true));
         animations.put("rolling",   new Animation(rollingFrames,   8,  false));
         animations.put("sword_attack", new Animation(sword_attack_frames, 2, false));
+        animations.put("shooting", new Animation(shootingFrames, 2, false));
         animations.put("sprint", new Animation(sprintingFrames, 6, true));
         currentAnimation = animations.get("idle");
     }

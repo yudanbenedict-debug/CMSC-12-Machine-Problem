@@ -36,6 +36,7 @@ public class Platform {
 
         
         
+        
     }
     //platform creation here. not necessary to create a getter/setter since this class will be final
     /**
