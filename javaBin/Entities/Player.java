@@ -4,15 +4,8 @@ import SpriteLoading.SpriteLoader;
 
 import java.awt.Color;
 import Weapons.*;
-import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.HashMap;
-
-import javax.imageio.ImageIO;
-import javax.management.AttributeChangeNotification;
 
 import java.awt.Graphics;
 import java.awt.Rectangle;
@@ -22,18 +15,11 @@ public class Player extends LivingEntity {
     private static final int HITBOX_OFFSET_X = 50;   // trim 28px from each side
     private static final int HITBOX_WIDTH    = 112 - (HITBOX_OFFSET_X * 2); 
 
-
-    // ── Hitbox constants ─────────────────────────────────────────────────────────
-    // The sprite sheet is 112×168 px but the visible character occupies only
-    // the lower portion.  SPRITE_DRAW_Y_OFFSET (48) pushes the image down when
-    // drawing, so the logical hitbox starts 48 px into the sprite height.
-    // These values are exposed via getHitboxOffsetY() / getHitboxHeight() so
-    // Level.java can correctly snap the player onto platforms.
     private static final int HITBOX_OFFSET_Y = SPRITE_DRAW_Y_OFFSET; // 48 px from top of entity
     private static final int HITBOX_HEIGHT   = 120; // remaining 120 px
     
     private static final int ATTACK_ANIMATION_FRAMETIMES = 4;
-    private static final int ATTACK_ANIMATION_FRAMES = 6;
+    private static final int ATTACK_ANIMATION_FRAMES = 5;
     private static final int ATTACK_ANIM_DURATION = ATTACK_ANIMATION_FRAMES * ATTACK_ANIMATION_FRAMETIMES;
 
     private static final float SPRINT_MULTIPILIER = 1.6F;
@@ -99,13 +85,13 @@ public class Player extends LivingEntity {
     private void initialize() {
         BufferedImage sharedFrame = SpriteLoader.loadWalkBaseFrame((int) width, (int) height);
 
-        walkFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Walk", "character_walk", 8, sharedFrame);
-        idleFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Idle", "character_idle-", 6, sharedFrame);
-        jumpFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Jump", "character_jump", 4, sharedFrame);
-        fallFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Fall", "character_jump", 1, sharedFrame);
-        sprintingFrames = SpriteLoader.loadImages("Player-Sprites/Player-Run", "character_run", 8, sharedFrame);
-        sword_attack_frames = SpriteLoader.loadImages("Player-Sprites/Player-Sword-Attack", "SwordAttack", 6, sharedFrame);
-        shootingFrames = SpriteLoader.loadImages("Player-Sprites/Player-Gun_Attack", "GunAttack", 6, sharedFrame);
+        walkFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Walk", "player_walk", 8, sharedFrame);
+        idleFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Idle", "player_idle", 6, sharedFrame);
+        jumpFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Jump", "player_jump", 4, sharedFrame);
+        fallFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Fall", "player_fall", 1, sharedFrame);
+        sprintingFrames = SpriteLoader.loadImages("Player-Sprites/Player-Run", "player_run", 8, sharedFrame);
+        sword_attack_frames = SpriteLoader.loadImages("Player-Sprites/Player-Sword-Attack", "player_sword-attack", 5, sharedFrame);
+        shootingFrames = SpriteLoader.loadImages("Player-Sprites/Player-Gun_Attack", "player_gun-attack", 5, sharedFrame);
         rollingFrames  = new BufferedImage[]{ sharedFrame };
 
         animations.put("walk",      new Animation(walkFrames,      8,  true));
@@ -174,15 +160,16 @@ public class Player extends LivingEntity {
         updateAnimation();
     }
 
-       private void updateAnimation() {
+    private void updateAnimation() {
         String curState;
  
-        // changes here for the weapon animation handler----------------------------------------
+        // changes here for the weapon animation handler (for debugging) ----------------------------------------
         if (attackAnimTimer > 0) {
             attackAnimTimer--;
             curState = (slot == 1) ? "shooting" : "sword_attack";
-        } else if (!isGrounded) {
-        // end of changes----------------------------------------
+        }  // end of changes----------------------------------------
+        // make sure to add the rolling animation and crouching animation AFTER the attack animation.
+        else if (!isGrounded) {
             curState = (velY < 0) ? "jump" : "fall";
         } else if (sprinting && Math.abs(velX) > 0.5f) {
             curState = "sprint";
@@ -256,7 +243,6 @@ public class Player extends LivingEntity {
 
 
 
-    // ── Getters / setters ────────────────────────────────────────────────────────
 
     public boolean isGrounded() { return isGrounded; }
 
@@ -311,7 +297,8 @@ public class Player extends LivingEntity {
         }
     }
     //END OF VERY IMPORTANT STUFF THAT ARE SOMEHOW LINES AFTER 200 ---------------
-    //item logic still not finished
+
+    //item logic still not finished (do not mind until the item.java is finished)
     public void applyBuff(String buffType, int durationSeconds) {
         if (buffType == null) return;
         switch (buffType) {
