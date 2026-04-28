@@ -1,4 +1,7 @@
 package Entities;
+
+import SpriteLoading.SpriteLoader;
+
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -14,6 +17,9 @@ import java.awt.Rectangle;
 
 public class Player extends LivingEntity {
     private static final int SPRITE_DRAW_Y_OFFSET = 48;
+    private static final int HITBOX_OFFSET_X = 50;   // trim 28px from each side
+    private static final int HITBOX_WIDTH    = 112 - (HITBOX_OFFSET_X * 2); 
+
 
     // ── Hitbox constants ─────────────────────────────────────────────────────────
     // The sprite sheet is 112×168 px but the visible character occupies only
@@ -22,7 +28,7 @@ public class Player extends LivingEntity {
     // These values are exposed via getHitboxOffsetY() / getHitboxHeight() so
     // Level.java can correctly snap the player onto platforms.
     private static final int HITBOX_OFFSET_Y = SPRITE_DRAW_Y_OFFSET; // 48 px from top of entity
-    private static final int HITBOX_HEIGHT   = 168 - HITBOX_OFFSET_Y; // remaining 120 px
+    private static final int HITBOX_HEIGHT   = 120; // remaining 120 px
 
     private static final float SPRINT_MULTIPILIER = 1.6F;
 
@@ -30,16 +36,9 @@ public class Player extends LivingEntity {
 
     private boolean movingLeft;
     private boolean movingRight;
-    private boolean movingUp;
-    private boolean movingDown;
-
-    private boolean isJumping;
-    private boolean running;
+    private boolean sprinting;
     protected boolean isGrounded;
-
-    private boolean isAttacking;
-    private long lastAttackTime;
-    private int attackCoolDown;
+    private boolean isJumping;
 
     private float velX;
     private float velY;
@@ -55,8 +54,9 @@ public class Player extends LivingEntity {
     private BufferedImage[] idleFrames;
     private BufferedImage[] jumpFrames;
     private BufferedImage[] fallFrames;
+    private BufferedImage[] sprintingFrames;
     private BufferedImage[] rollingFrames;
-    private BufferedImage[] ledgegrabFrames;
+    private BufferedImage[] sword_attack_frames;
 
     private Animation currentAnimation;
     //coyote frames 
@@ -66,14 +66,12 @@ public class Player extends LivingEntity {
     private int coyoteFrames;
 
     public Player(float velX, float velY, float x, float y) {
-        super(x, y, 112, 168, 20.0f, 5.0f, 6.0f, 14.0f);
+        super(x, y, 112, 168, 20.0f, 5.0f, 3.0f, 14.0f);
         this.velX = velX;
         this.velY = velY;
         this.goldCount = 0;
         this.score = 0;
-        this.attackCoolDown = 400;
-        this.isAttacking = false;
-        this.running = false;
+        this.sprinting = false;
         this.isJumping = false;
         this.gravity = 0.65f;
         this.jumpBufferFrames = 0;
@@ -82,20 +80,23 @@ public class Player extends LivingEntity {
     }
 
     private void initialize() {
-        BufferedImage sharedFrame = loadWalkBaseFrame();
-        walkFrames     = loadImages("Player-Sprites/Player-Walk", "character_walk", 8, sharedFrame);
-        idleFrames     = loadImages("Player-Sprites/Player-Idle", "character_idle-", 6, sharedFrame);
-        jumpFrames     = loadImages("Player-Sprites/Player-Jump", "character_jump", 4, sharedFrame);
-        fallFrames     = loadImages("Player-Sprites/Player-Fall", "character_jump", 1, sharedFrame);
-        rollingFrames  = new BufferedImage[]{ sharedFrame };
-        ledgegrabFrames= new BufferedImage[]{ sharedFrame };
+        BufferedImage sharedFrame = SpriteLoader.loadWalkBaseFrame((int) width, (int) height);
 
-        animations.put("walk",      new Animation(walkFrames,      4,  true));
-        animations.put("idle",      new Animation(idleFrames,      10, true));
-        animations.put("jump",      new Animation(jumpFrames,      8,  false));
-        animations.put("fall",      new Animation(fallFrames,      8,  true));
+        walkFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Walk", "character_walk", 8, sharedFrame);
+        idleFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Idle", "character_idle-", 6, sharedFrame);
+        jumpFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Jump", "character_jump", 4, sharedFrame);
+        fallFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Fall", "character_jump", 1, sharedFrame);
+        sprintingFrames = SpriteLoader.loadImages("Player-Sprites/Player-Run", "character_run", 8, sharedFrame);
+        sword_attack_frames = SpriteLoader.loadImages("Player-Sprites/Player-Sword", "SwordAttack", 6, sharedFrame);
+        rollingFrames  = new BufferedImage[]{ sharedFrame };
+
+        animations.put("walk",      new Animation(walkFrames,      8,  true));
+        animations.put("idle",      new Animation(idleFrames,      6, true));
+        animations.put("jump",      new Animation(jumpFrames,      4,  false));
+        animations.put("fall",      new Animation(fallFrames,      1,  true));
         animations.put("rolling",   new Animation(rollingFrames,   8,  false));
-        animations.put("ledgegrab", new Animation(ledgegrabFrames, 8,  false));
+        animations.put("sword_attack", new Animation(sword_attack_frames, 2, false));
+        animations.put("sprint", new Animation(sprintingFrames, 6, true));
         currentAnimation = animations.get("idle");
     }
 
@@ -112,7 +113,7 @@ public class Player extends LivingEntity {
     public void update() {
         float currentSpeed;
 
-        if (running) {
+        if (sprinting) {
                 currentSpeed = walk_speed * SPRINT_MULTIPILIER;
         } else {
             currentSpeed = walk_speed;
@@ -150,10 +151,16 @@ public class Player extends LivingEntity {
     }
 
     private void updateAnimation() {
+
+        //debug
+        //end of debug
         String curState = "idle";
         if (!isGrounded) {
             curState = (velY < 0) ? "jump" : "fall";
-        } else if (Math.abs(velX) > 0.5f) {
+        } else if (sprinting && Math.abs(velX) > 0.5f) {
+            curState = "sprint";
+        } 
+        else if (Math.abs(velX) > 0.5f) {
             curState = "walk";
         }
         if (!curState.equals(currentState)) {
@@ -170,16 +177,32 @@ public class Player extends LivingEntity {
         if (currentAnimation == null) return;
         BufferedImage frame = currentAnimation.getCurrentFrame();
         if (frame == null) return;
-
-        int drawX     = (int) x;
+    
+        int drawX = (int) x;
         int drawWidth = (int) width;
+    
         if (!facingRight) {
-            drawX    += drawWidth;
+            drawX += drawWidth;
             drawWidth = -drawWidth;
         }
-        g.drawImage(frame, drawX, (int) y + SPRITE_DRAW_Y_OFFSET, drawWidth, (int) height, null);
+    //FOR DEBUGGING
+        int drawY = (int) y + SPRITE_DRAW_Y_OFFSET;
+        g.drawImage(frame, drawX, drawY, drawWidth, (int) height, null);
+    
+   
+        Rectangle hitbox = getBounds();
+        g.setColor(Color.RED);
+        g.drawRect(hitbox.x, hitbox.y, hitbox.width, hitbox.height);
+    
+        
+        g.setColor(Color.GREEN);
+        g.fillOval((int)x - 3, (int)y - 3, 6, 6);
+    
+        g.setColor(Color.BLUE);
+        g.fillOval(drawX - 3, drawY - 3, 6, 6);
+    //END OF DEBUGGING
     }
-
+    
     public int getHitboxOffsetY() {
         return HITBOX_OFFSET_Y;
     }
@@ -191,13 +214,17 @@ public class Player extends LivingEntity {
     
     @Override
     public Rectangle getBounds() {
+        int shrinkTop = 40;     //dbugging
+
         return new Rectangle(
-            (int) x,
-            (int) y + HITBOX_OFFSET_Y,
-            (int) width,
-            HITBOX_HEIGHT
+            (int) x + HITBOX_OFFSET_X,
+            (int) y + HITBOX_OFFSET_Y + shrinkTop,
+            HITBOX_WIDTH,
+            HITBOX_HEIGHT - (shrinkTop)
         );
     }
+
+
 
     // ── Getters / setters ────────────────────────────────────────────────────────
 
@@ -207,13 +234,20 @@ public class Player extends LivingEntity {
 
     public float getVerticalVelocity() { return velY; }
     public void  setVerticalVelocity(float velY) { this.velY = velY; }
+    public int getHitboxOffsetX() { return HITBOX_OFFSET_X; }
+    public int getHitboxWidth()   { return HITBOX_WIDTH; }
+
 
     public void setGrounded(boolean grounded) { this.isGrounded = grounded; }
 
-    public void applyEngineState(boolean moveLeft, boolean moveRight, boolean jumpPressed) {
+    public void setSprinting(boolean sprinting) {
+        this.sprinting = sprinting;
+    }
+    public void applyEngineState(boolean moveLeft, boolean moveRight, boolean jumpPressed, boolean sprintPressed) {
         this.movingLeft  = moveLeft;
         this.movingRight = moveRight;
         if (jumpPressed) jump();
+        this.sprinting = sprintPressed;
     }
     //item logic still not finished
     public void applyBuff(String buffType, int durationSeconds) {
@@ -243,61 +277,6 @@ public class Player extends LivingEntity {
     //sprite loading
     //only walkanimation for now since the other sprites are still not uploaded
     //for walk frames since it is pretty necessary
-    private BufferedImage loadWalkBaseFrame() {
-        BufferedImage img;
-        img = loadFrameOrNull("/Resources/00_character_walk.png");    if (img != null) return img;
-        img = loadFrameFromFile("Resources/00_character_walk.png");   if (img != null) return img;
-        img = loadFrameFromFile("../Resources/00_character_walk.png");if (img != null) return img;
-        img = loadFrameFromFile("00_character_walk.png");             if (img != null) return img;
-        return createFallbackFrame();
-    }
-
-    
-    private BufferedImage[] loadImages(String folderPath, String baseName, int frameCount, BufferedImage fallback) {
-        BufferedImage[] frames = new BufferedImage[frameCount];
-    
-        for (int i = 0; i < frameCount; i++) {
-            String fileName = String.format("%02d_%s.png", i, baseName);
-    
-            String fullPath = folderPath + "/" + fileName;
-            BufferedImage f = loadFrameOrNull("/Resources/" + fullPath); //Player-Sprites/Player-Walk
-            if (f == null) f = loadFrameFromFile("Resources/" + fullPath);
-            if (f == null) f = loadFrameFromFile("../Resources/" + fullPath);
-            if (f == null) f = loadFrameFromFile(fullPath);
-    
-            frames[i] = (f != null) ? f : fallback;
-            
-        }
-    
-        return frames;
-    }
-    
-
-    private BufferedImage loadFrameOrNull(String resourcePath) {
-        try {
-            URL url = getClass().getResource(resourcePath);
-            return (url != null) ? ImageIO.read(url) : null;
-        } catch (IOException e) { return null; }
-    }
-
-    private BufferedImage loadFrameFromFile(String path) {
-        try {
-            File f = new File(path);
-            return f.exists() ? ImageIO.read(f) : null;
-        } catch (IOException e) { return null; }
-    }
-
-    private BufferedImage createFallbackFrame() {
-        BufferedImage fallback = new BufferedImage((int) width, (int) height, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2 = fallback.createGraphics();
-        g2.setColor(new Color(45, 95, 250));
-        g2.fillRect(0, 0, (int) width, (int) height);
-        g2.setColor(Color.WHITE);
-        g2.fillRect(6, 10, 6, 6);
-        g2.fillRect((int) width - 12, 10, 6, 6);
-        g2.dispose();
-        return fallback;
-    }
 
     @Override
     public void onDeath() { 
