@@ -12,6 +12,7 @@ import java.net.URL;
 import java.util.HashMap;
 
 import javax.imageio.ImageIO;
+import javax.management.AttributeChangeNotification;
 
 import java.awt.Graphics;
 import java.awt.Rectangle;
@@ -30,9 +31,14 @@ public class Player extends LivingEntity {
     // Level.java can correctly snap the player onto platforms.
     private static final int HITBOX_OFFSET_Y = SPRITE_DRAW_Y_OFFSET; // 48 px from top of entity
     private static final int HITBOX_HEIGHT   = 120; // remaining 120 px
+    
+    private static final int ATTACK_ANIMATION_FRAMETIMES = 4;
+    private static final int ATTACK_ANIMATION_FRAMES = 6;
+    private static final int ATTACK_ANIM_DURATION = ATTACK_ANIMATION_FRAMES * ATTACK_ANIMATION_FRAMETIMES;
 
     private static final float SPRINT_MULTIPILIER = 1.6F;
 
+    private int attackAnimTimer = 0;
     private boolean facingRight = true;
 
     private boolean movingLeft;
@@ -48,6 +54,15 @@ public class Player extends LivingEntity {
     private int score;
     private int goldCount;
 
+    //
+    private Gun gun = new Gun();
+    private Sword sword = new Sword();
+
+    private int slot = 1; // slot is 1/2 (1 for gun, 2 for sword... TODO: make sure gun ammo is not infinite).
+
+    private boolean attackPressedLastFrame = false;
+    //
+
     private HashMap<String, Animation> animations = new HashMap<>();
     private String currentState = "idle";
 
@@ -61,7 +76,7 @@ public class Player extends LivingEntity {
     private BufferedImage[] shootingFrames;
 
     private Animation currentAnimation;
-    //coyote frames 
+    //fancy-schmancy stuff
     private static final int JUMP_BUFFER_FRAMES = 8;
     private static final int COYOTE_FRAMES = 6;
     private int jumpBufferFrames;
@@ -89,16 +104,17 @@ public class Player extends LivingEntity {
         jumpFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Jump", "character_jump", 4, sharedFrame);
         fallFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Fall", "character_jump", 1, sharedFrame);
         sprintingFrames = SpriteLoader.loadImages("Player-Sprites/Player-Run", "character_run", 8, sharedFrame);
-        sword_attack_frames = SpriteLoader.loadImages("Player-Sprites/Player-Sword", "SwordAttack", 6, sharedFrame);
+        sword_attack_frames = SpriteLoader.loadImages("Player-Sprites/Player-Sword-Attack", "SwordAttack", 6, sharedFrame);
+        shootingFrames = SpriteLoader.loadImages("Player-Sprites/Player-Gun_Attack", "GunAttack", 6, sharedFrame);
         rollingFrames  = new BufferedImage[]{ sharedFrame };
 
         animations.put("walk",      new Animation(walkFrames,      8,  true));
         animations.put("idle",      new Animation(idleFrames,      6, true));
-        animations.put("jump",      new Animation(jumpFrames,      4,  false));
+        animations.put("jump",      new Animation(jumpFrames,      4,  true));
         animations.put("fall",      new Animation(fallFrames,      1,  true));
-        animations.put("rolling",   new Animation(rollingFrames,   8,  false));
-        animations.put("sword_attack", new Animation(sword_attack_frames, 2, false));
-        animations.put("shooting", new Animation(shootingFrames, 2, false));
+        animations.put("rolling",   new Animation(rollingFrames,   8,  true));
+        animations.put("sword_attack", new Animation(sword_attack_frames, ATTACK_ANIMATION_FRAMETIMES, true));
+        animations.put("shooting", new Animation(shootingFrames, ATTACK_ANIMATION_FRAMETIMES, true));
         animations.put("sprint", new Animation(sprintingFrames, 6, true));
         currentAnimation = animations.get("idle");
     }
@@ -109,6 +125,8 @@ public class Player extends LivingEntity {
     }
     public void sprint(){
         if(isGrounded);
+    }
+    public void attack(){
 
     }
 
@@ -121,7 +139,6 @@ public class Player extends LivingEntity {
         } else {
             currentSpeed = walk_speed;
         }
-        
 
         velX = 0;
         if (movingLeft)  { velX = -currentSpeed; facingRight = false; }
@@ -150,29 +167,39 @@ public class Player extends LivingEntity {
         if (velY >= 20) { velY = 20; }
         y += velY;
 
+
+        gun.tick();
+        sword.tick();
+
         updateAnimation();
     }
 
-    private void updateAnimation() {
-
-        //debug
-        //end of debug
-        String curState = "idle";
-        if (!isGrounded) {
+       private void updateAnimation() {
+        String curState;
+ 
+        // changes here for the weapon animation handler----------------------------------------
+        if (attackAnimTimer > 0) {
+            attackAnimTimer--;
+            curState = (slot == 1) ? "shooting" : "sword_attack";
+        } else if (!isGrounded) {
+        // end of changes----------------------------------------
             curState = (velY < 0) ? "jump" : "fall";
         } else if (sprinting && Math.abs(velX) > 0.5f) {
             curState = "sprint";
-        } 
-        else if (Math.abs(velX) > 0.5f) {
+        } else if (Math.abs(velX) > 0.5f) {
             curState = "walk";
+        } else {
+            curState = "idle";
         }
+ 
         if (!curState.equals(currentState)) {
             currentState = curState;
-            currentAnimation = animations.get(curState);
+            Animation next = animations.get(curState);
+            if (next != null) next.resetanimation();
+            currentAnimation = next;
         }
-        if (currentAnimation != null) {
-            currentAnimation.animate();
-        }
+
+        if (currentAnimation != null) currentAnimation.animate();
     }
 
     @Override
@@ -239,19 +266,51 @@ public class Player extends LivingEntity {
     public void  setVerticalVelocity(float velY) { this.velY = velY; }
     public int getHitboxOffsetX() { return HITBOX_OFFSET_X; }
     public int getHitboxWidth()   { return HITBOX_WIDTH; }
-
+    public Gun getGun(){ return gun; }
+    public Sword getSword(){return sword;}
+    public int get_activeslots(){return slot;};
 
     public void setGrounded(boolean grounded) { this.isGrounded = grounded; }
 
     public void setSprinting(boolean sprinting) {
         this.sprinting = sprinting;
     }
-    public void applyEngineState(boolean moveLeft, boolean moveRight, boolean jumpPressed, boolean sprintPressed) {
+    //VERY IMPORTANT--------------------
+    public void applyEngineState(boolean moveLeft, boolean moveRight, boolean jumpPressed, boolean sprintPressed, boolean attackPressed, int weaponSlot, boolean reloadPressed ) {
         this.movingLeft  = moveLeft;
         this.movingRight = moveRight;
         if (jumpPressed) jump();
         this.sprinting = sprintPressed;
+
+        if(weaponSlot == 1 || weaponSlot == 2){
+            slot = weaponSlot;
+        }
+        if(reloadPressed && slot == 1){
+            gun.reload();
+        }
+        if(attackPressed && !attackPressedLastFrame){
+            tryAttack();
+        }
+
+        attackPressedLastFrame = attackPressed;
     }
+    public void tryAttack(){
+        Rectangle atk_rect = getBounds();
+        //bad naming but its just the the rectangle/hitbox for the attack.
+        boolean fired;
+        float hx = atk_rect.x, hy = atk_rect.y, hw = atk_rect.width, hh = atk_rect.height;
+        if(slot == 1){
+            fired = gun.tryAttack(hx, hy, hw, hh, facingRight);
+        }
+        else{
+            fired = sword.tryAttack(hx, hy, hw, hh, facingRight);
+        }
+
+        if(fired){
+            attackAnimTimer = ATTACK_ANIM_DURATION;
+        }
+    }
+    //END OF VERY IMPORTANT STUFF THAT ARE SOMEHOW LINES AFTER 200 ---------------
     //item logic still not finished
     public void applyBuff(String buffType, int durationSeconds) {
         if (buffType == null) return;

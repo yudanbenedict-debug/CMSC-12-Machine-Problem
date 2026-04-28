@@ -7,7 +7,13 @@ public class Gun extends Weapons{
     private static final int CD = 18;
     private static final int MAX_AMMO = 12;
 
+    private static final int MAX_CLIPS = 3;
+    private static final int RELOAD_TICKS = 90; //abt 1.5 seconds. TODO: Maybe use NANOS for better counter
+ 
     private int ammo = MAX_AMMO;
+    private int clipsRemaining = MAX_CLIPS;
+    private boolean reloading = false;
+    private int reloadTimer = 0;
     private final List<Bullet> bullets = new ArrayList<>();
     //for super purposes
     public Gun(){
@@ -15,8 +21,12 @@ public class Gun extends Weapons{
     @Override
     public void tick(){
         super.tick();
-        for(Bullet b : bullets){
-            b.tick();
+        if (reloading) {
+            reloadTimer--;
+            if (reloadTimer <= 0) {
+                ammo = MAX_AMMO;
+                reloading = false;
+            }
         }
 
         bullets.removeIf(b -> !b.isActive());
@@ -44,7 +54,16 @@ public class Gun extends Weapons{
         return ammo;
     }
 
-    public void reload() {
-        ammo = MAX_AMMO;
+    public boolean reload() {
+        if (reloading || clipsRemaining <= 0 || ammo == MAX_AMMO) return false;
+        clipsRemaining--;
+        ammo = 0;          // discard remaining bullets
+        reloading = true;
+        reloadTimer = RELOAD_TICKS;
+        return true;
     }
+ 
+    public boolean isReloading()    { return reloading; }
+    public int     getClips()       { return clipsRemaining; }
+    public int     getMaxAmmo()     { return MAX_AMMO; }
 }
