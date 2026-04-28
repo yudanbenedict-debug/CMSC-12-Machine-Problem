@@ -21,7 +21,14 @@ import javax.swing.Timer;
 import Exceptions.ResourceLoadException;
 import GameCreation.Game;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import java.io.InputStream;
+
+
 public class EntryScreen extends JFrame {
+    private Clip backgroundMusic;
 
     private final ScrollingBackgroundPanel backgroundPanel;
 
@@ -34,7 +41,7 @@ public class EntryScreen extends JFrame {
         backgroundPanel = new ScrollingBackgroundPanel();
         setContentPane(backgroundPanel);
         backgroundPanel.setLayout(new GridBagLayout());
-
+        playMusic();
         JPanel menuPanel = new JPanel();
         menuPanel.setOpaque(false);
         menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
@@ -61,17 +68,46 @@ public class EntryScreen extends JFrame {
 
     private void startGame() {
         backgroundPanel.stopScrolling();
+    
+        if (backgroundMusic != null) {
+            backgroundMusic.stop();
+            backgroundMusic.close();
+        }
+    
         dispose();
         JOptionPane.showMessageDialog(null, "Launching test level...");
         Game.launch();
     }
+    
 
-   
+    private void playMusic() throws ResourceLoadException{
+        try {
+            File file = new File("Resources/Sounds/Newer-Days.wav");
+    
+            System.out.println("DEBUG path: " + file.getAbsolutePath());
+    
+            if (!file.exists()) {
+                System.out.println("Music file not found");
+                throw new ResourceLoadException("Invalid Shit");
+            }
+    
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(file);
+            backgroundMusic = AudioSystem.getClip();
+            backgroundMusic.open(audioStream);
+            backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
+            backgroundMusic.start();
+    
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    
     private static class ScrollingBackgroundPanel extends JPanel {
         private BufferedImage ocean;
         private int offset = 0;
         private Timer scrollTimer;
-        private int scrollSpeed = 2;
+        private int scrollSpeed = 1;
 
         public ScrollingBackgroundPanel() {
             try {

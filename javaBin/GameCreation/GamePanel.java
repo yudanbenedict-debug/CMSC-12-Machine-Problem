@@ -7,6 +7,7 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
@@ -30,6 +31,7 @@ public class GamePanel extends JPanel implements Runnable {
     private volatile boolean moveLeft;
     private volatile boolean moveRight;
     private volatile boolean jumpHeld;
+    private volatile boolean isRunning;
 
     private int cameraX;
 
@@ -50,12 +52,47 @@ public class GamePanel extends JPanel implements Runnable {
         SwingUtilities.invokeLater(this::requestFocusInWindow);
     }
 
-    // ── Input ─────────────────────────────────────────────────────────────────
-
     private void installInput() {
         InputMap  inputMap  = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap actionMap = getActionMap();
 
+        // inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_SHIFT, 0, false), "sprint-pressed");
+        // inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_SHIFT, 0, true), "sprint-released");
+
+        // actionMap.put("sprint-pressed", new AbstractAction() {
+        //     @Override
+        //     public void actionPerformed(ActionEvent e) {
+        //         isRunning = true;
+        //     }
+        // });
+
+        // actionMap.put("sprint-released", new AbstractAction() {
+        //     @Override
+        //     public void actionPerformed(ActionEvent e) {
+        //         isRunning = false;
+        //     }
+        // });
+
+        //debuggiing
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_P, 0, false), "sprint-pressed");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_P, 0, true), "sprint-released");
+        
+        actionMap.put("sprint-pressed", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                isRunning = true;
+            }
+        });
+        
+        actionMap.put("sprint-released", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                isRunning = false;
+            }
+        });
+        
+
+        //end of debugging
         bindKey(inputMap, actionMap, "pressed A",     "left-pressed",       true,  false, false);
         bindKey(inputMap, actionMap, "released A",    "left-released",      false, false, false);
         bindKey(inputMap, actionMap, "pressed LEFT",  "leftArrow-pressed",  true,  false, false);
@@ -78,18 +115,19 @@ public class GamePanel extends JPanel implements Runnable {
                          boolean lv, boolean rv, boolean jv) {
         im.put(KeyStroke.getKeyStroke(ks), name);
         am.put(name, new AbstractAction() {
-            @Override public void actionPerformed(ActionEvent e) {
-                if (name.contains("left"))  moveLeft  = lv;
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (name.contains("left")) moveLeft = lv;
                 else if (name.contains("right")) moveRight = rv;
-                if (name.contains("jump"))  jumpHeld  = jv;
+                else if (name.contains("jump")) jumpHeld = jv;
+                else if (name.contains("sprint")) isRunning = name.contains("pressed");
             }
+
         });
     }
 
-    // ── Game loop ─────────────────────────────────────────────────────────────
-
     private void updateGame() {
-        LevelInput input = new LevelInput(moveLeft, moveRight, jumpHeld);
+        LevelInput input = new LevelInput(moveLeft, moveRight, jumpHeld, isRunning);
         level.update(input);
 
         Player player    = level.getPlayer();
@@ -97,7 +135,8 @@ public class GamePanel extends JPanel implements Runnable {
         int targetCamX   = (int) player.getX() - halfViewport + ((int) player.getWidth() / 2);
         int maxCamera    = Math.max(0, level.getWorldWidth() - getWidth());
         cameraX = Math.max(0, Math.min(targetCamX, maxCamera));
-    }
+
+    }   
 
     @Override
     public void run() {

@@ -1,5 +1,4 @@
 package Entities;
-import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 public class Animation {

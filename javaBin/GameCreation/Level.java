@@ -87,7 +87,8 @@ public class Level {
         player.applyEngineState(
             inputState.isMoveLeft(),
             inputState.isMoveRight(),
-            inputState.isJumpPressed()
+            inputState.isJumpPressed(),
+            inputState.isRunning()
         );
 
         float previousX = player.getX();
@@ -123,51 +124,97 @@ public class Level {
 
    //player collission with platform
    //to be fixed: platform bottom isn't registered.
+    //debug
+
+    // private void handlePlayerPlatformCollisions(float previousX, float previousY) {
+    //     player.setGrounded(false);
+    //     Rectangle playerBounds = player.getBounds();
+    //     float previousBottom   = previousY + player.getHeight();
+    //     float previousTop      = previousY;
+
+    //     for (Platform platform : currentLevelData.getPlatforms()) {
+    //         Rectangle pb      = platform.getBounds();
+    //         float platLeft    = pb.x;
+    //         float platRight   = pb.x + pb.width;
+    //         float platTop     = pb.y;
+    //         float platBottom  = pb.y + pb.height;
+
+    //         float curBottom   = player.getY() + player.getHeight();
+    //         float curLeft     = player.getX();
+    //         float curRight    = player.getX() + player.getWidth();
+
+    //         boolean overlapsH  = curLeft < platRight && curRight > platLeft;
+    //         boolean crossesTop = previousBottom <= platTop + FLOOR_SNAP_TOLERANCE
+    //                              && curBottom >= platTop;
+
+    //         if (overlapsH && player.getVerticalVelocity() >= 0 && crossesTop) {
+    //             player.setY(platTop - player.getHitboxOffsetY() - player.getHitboxHeight());
+    //             player.setVerticalVelocity(0);
+    //             player.setGrounded(true);
+    //             playerBounds = player.getBounds();
+    //         }
+
+    //         if (!playerBounds.intersects(pb)) continue;
+
+    //         // Vertical push-out
+    //         if (previousBottom <= platTop) {
+    //             player.setY(platTop - player.getHitboxOffsetY() - player.getHitboxHeight());
+    //             player.setVerticalVelocity(0);
+    //             player.setGrounded(true);
+    //         } else if (previousTop >= platBottom) {
+    //             player.setY(platBottom - player.getHitboxOffsetY());
+    //             if (player.getVerticalVelocity() < 0) player.setVerticalVelocity(0);
+    //         }
+
+    //         playerBounds = player.getBounds();
+    //     }
+    // }
+
+    // end of debug
 
     private void handlePlayerPlatformCollisions(float previousX, float previousY) {
         player.setGrounded(false);
         Rectangle playerBounds = player.getBounds();
-        float previousBottom   = previousY + player.getHeight();
-        float previousTop      = previousY;
-
+    
+        // Use hitbox bottom/top, not raw sprite coords
+        float previousHitboxBottom = previousY + player.getHitboxOffsetY() + player.getHitboxHeight();
+        float previousHitboxTop    = previousY + player.getHitboxOffsetY();
+    
         for (Platform platform : currentLevelData.getPlatforms()) {
-            Rectangle pb      = platform.getBounds();
-            float platLeft    = pb.x;
-            float platRight   = pb.x + pb.width;
-            float platTop     = pb.y;
-            float platBottom  = pb.y + pb.height;
-
-            float curBottom   = player.getY() + player.getHeight();
-            float curLeft     = player.getX();
-            float curRight    = player.getX() + player.getWidth();
-
-            boolean overlapsH  = curLeft < platRight && curRight > platLeft;
-            boolean crossesTop = previousBottom <= platTop + FLOOR_SNAP_TOLERANCE
+            Rectangle pb     = platform.getBounds();
+            float platTop    = pb.y;
+            float platBottom = pb.y + pb.height;
+    
+            float curBottom  = playerBounds.y + playerBounds.height;
+            float curLeft    = playerBounds.x;
+            float curRight   = playerBounds.x + playerBounds.width;
+    
+            boolean overlapsH  = curLeft < pb.x + pb.width && curRight > pb.x;
+            boolean crossesTop = previousHitboxBottom <= platTop + FLOOR_SNAP_TOLERANCE
                                  && curBottom >= platTop;
-
+    
             if (overlapsH && player.getVerticalVelocity() >= 0 && crossesTop) {
+                // Snap feet (hitbox bottom) to platform top
                 player.setY(platTop - player.getHitboxOffsetY() - player.getHitboxHeight());
                 player.setVerticalVelocity(0);
                 player.setGrounded(true);
                 playerBounds = player.getBounds();
             }
-
+    
             if (!playerBounds.intersects(pb)) continue;
-
-            // Vertical push-out
-            if (previousBottom <= platTop) {
+    
+            if (previousHitboxBottom <= platTop) {
                 player.setY(platTop - player.getHitboxOffsetY() - player.getHitboxHeight());
                 player.setVerticalVelocity(0);
                 player.setGrounded(true);
-            } else if (previousTop >= platBottom) {
+            } else if (previousHitboxTop >= platBottom) {
                 player.setY(platBottom - player.getHitboxOffsetY());
                 if (player.getVerticalVelocity() < 0) player.setVerticalVelocity(0);
             }
-
+    
             playerBounds = player.getBounds();
         }
     }
-
     private void handleItemCollisions() {
         Rectangle playerBounds = player.getBounds();
         for (Rectangle itemBounds : currentLevelData.getItems()) {
