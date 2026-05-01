@@ -1,11 +1,11 @@
 package Entities;
 
-import SpriteLoading.SpriteLoader;
-
 import java.awt.Color;
 import Weapons.*;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
+
+import Loaders.SpriteLoader;
 
 import java.awt.Graphics;
 import java.awt.Rectangle;
