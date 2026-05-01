@@ -11,16 +11,19 @@ import java.awt.Graphics;
 import java.awt.Rectangle;
 
 public class Player extends LivingEntity {
-    private static final int SPRITE_DRAW_Y_OFFSET = 48;
-    private static final int HITBOX_OFFSET_X = 50;   // trim 28px from each side
-    private static final int HITBOX_WIDTH    = 112 - (HITBOX_OFFSET_X * 2); 
+    // private static final int SPRITE_DRAW_Y_OFFSET = 48;
+    // private static final int HITBOX_OFFSET_X = 50;   // trim 28px from each side
+    // private static final int HITBOX_WIDTH    = 112 - (HITBOX_OFFSET_X * 2); 
 
-    private static final int HITBOX_OFFSET_Y = SPRITE_DRAW_Y_OFFSET; // 48 px from top of entity
-    private static final int HITBOX_HEIGHT   = 120; // remaining 120 px
+    // private static final int HITBOX_OFFSET_Y = SPRITE_DRAW_Y_OFFSET; // 48 px from top of entity
+    // private static final int HITBOX_HEIGHT   = 120; // remaining 120 px
     
     private static final int ATTACK_ANIMATION_FRAMETIMES = 4;
     private static final int ATTACK_ANIMATION_FRAMES = 5;
     private static final int ATTACK_ANIM_DURATION = ATTACK_ANIMATION_FRAMES * ATTACK_ANIMATION_FRAMETIMES;
+
+    private static final int NORMAL_WIDTH = 32;
+    private static final int SHOOT_WIDTH = 40;
 
     private static final float SPRINT_MULTIPILIER = 1.6F;
 
@@ -69,7 +72,7 @@ public class Player extends LivingEntity {
     private int coyoteFrames;
 
     public Player(float velX, float velY, float x, float y) {
-        super(x, y, 112, 168, 20.0f, 5.0f, 3.0f, 14.0f);
+        super(x, y, NORMAL_WIDTH, 48, 20.0f, 5.0f, 3.0f, 14.0f);
         this.velX = velX;
         this.velY = velY;
         this.goldCount = 0;
@@ -90,8 +93,8 @@ public class Player extends LivingEntity {
         jumpFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Jump", "player_jump", 4, sharedFrame);
         fallFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Fall", "player_fall", 1, sharedFrame);
         sprintingFrames = SpriteLoader.loadImages("Player-Sprites/Player-Run", "player_run", 8, sharedFrame);
-        sword_attack_frames = SpriteLoader.loadImages("Player-Sprites/Player-Sword-Attack", "player_sword-attack", 5, sharedFrame);
-        shootingFrames = SpriteLoader.loadImages("Player-Sprites/Player-Gun_Attack", "player_gun-attack", 5, sharedFrame);
+        sword_attack_frames = SpriteLoader.loadImages("Player-Sprites/Player-Sword-Attack", "player_sword", 5, sharedFrame);
+        shootingFrames = SpriteLoader.loadImages("Player-Sprites/Player-Gun_Attack", "player_gun", 5, sharedFrame);
         rollingFrames  = new BufferedImage[]{ sharedFrame };
 
         animations.put("walk",      new Animation(walkFrames,      8,  true));
@@ -153,41 +156,54 @@ public class Player extends LivingEntity {
         if (velY >= 20) { velY = 20; }
         y += velY;
 
-
+        // if(currentState.equals("sword_attack")){
+        //     width = SHOOT_WIDTH;
+        // }
+        // else{
+        //     width = NORMAL_WIDTH;
+        // }
         gun.tick();
         sword.tick();
 
         updateAnimation();
     }
 
-    private void updateAnimation() {
-        String curState;
- 
-        // changes here for the weapon animation handler (for debugging) ----------------------------------------
-        if (attackAnimTimer > 0) {
-            attackAnimTimer--;
-            curState = (slot == 1) ? "shooting" : "sword_attack";
-        }  // end of changes----------------------------------------
-        // make sure to add the rolling animation and crouching animation AFTER the attack animation.
-        else if (!isGrounded) {
-            curState = (velY < 0) ? "jump" : "fall";
-        } else if (sprinting && Math.abs(velX) > 0.5f) {
-            curState = "sprint";
-        } else if (Math.abs(velX) > 0.5f) {
-            curState = "walk";
-        } else {
-            curState = "idle";
-        }
- 
-        if (!curState.equals(currentState)) {
-            currentState = curState;
-            Animation next = animations.get(curState);
-            if (next != null) next.resetanimation();
-            currentAnimation = next;
-        }
+        private void updateAnimation() {
+            String curState;
+    
+            // changes here for the weapon animation handler (for debugging) ----------------------------------------
+            if (attackAnimTimer > 0) {
+                attackAnimTimer--;
+                if (slot == 1) {
+                    curState = "shooting";
+                } else {
+                    curState = "sword_attack";
+                }
+                
+            }  // end of changes----------------------------------------
+            // make sure to add the rolling animation and crouching animation AFTER the attack animation.
+            // else if(rolling){
+            //     curState = "rolling";
+            // }
+            else if (!isGrounded) {
+                curState = (velY < 0) ? "jump" : "fall";
+            } else if (sprinting && Math.abs(velX) > 0.5f) {
+                curState = "sprint";
+            } else if (Math.abs(velX) > 0.5f) {
+                curState = "walk";
+            } else {
+                curState = "idle";
+            }
+    
+            if (!curState.equals(currentState)) {
+                currentState = curState;
+                Animation next = animations.get(curState);
+                if (next != null) next.resetanimation();
+                currentAnimation = next;
+            }
 
-        if (currentAnimation != null) currentAnimation.animate();
-    }
+            if (currentAnimation != null) currentAnimation.animate();
+        }
 
     @Override
     public void draw(Graphics g) {
@@ -203,7 +219,7 @@ public class Player extends LivingEntity {
             drawWidth = -drawWidth;
         }
     //FOR DEBUGGING
-        int drawY = (int) y + SPRITE_DRAW_Y_OFFSET;
+        int drawY = (int) y;
         g.drawImage(frame, drawX, drawY, drawWidth, (int) height, null);
     
    
@@ -220,24 +236,24 @@ public class Player extends LivingEntity {
     //END OF DEBUGGING
     }
     
-    public int getHitboxOffsetY() {
-        return HITBOX_OFFSET_Y;
-    }
+    // public int getHitboxOffsetY() {
+    //     return HITBOX_OFFSET_Y;
+    // }
 
-    public int getHitboxHeight() {
-        return HITBOX_HEIGHT;
-    }
+    // public int getHitboxHeight() {
+    //     return HITBOX_HEIGHT;
+    // }
 
     
     @Override
     public Rectangle getBounds() {
-        int shrinkTop = 40;     //dbugging
+       //dbugging
 
         return new Rectangle(
-            (int) x + HITBOX_OFFSET_X,
-            (int) y + HITBOX_OFFSET_Y + shrinkTop,
-            HITBOX_WIDTH,
-            HITBOX_HEIGHT - (shrinkTop)
+            (int) x,
+            (int) y,
+            (int) width,
+            (int) height
         );
     }
 
@@ -250,8 +266,7 @@ public class Player extends LivingEntity {
 
     public float getVerticalVelocity() { return velY; }
     public void  setVerticalVelocity(float velY) { this.velY = velY; }
-    public int getHitboxOffsetX() { return HITBOX_OFFSET_X; }
-    public int getHitboxWidth()   { return HITBOX_WIDTH; }
+    
     public Gun getGun(){ return gun; }
     public Sword getSword(){return sword;}
     public int get_activeslots(){return slot;};
