@@ -1,4 +1,4 @@
-package SpriteLoading;
+package Loaders;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -25,7 +25,7 @@ public class SpriteLoader {
 
         for (int i = 0; i < frameCount; i++) {
             String fileName = String.format("%02d_%s.png", i, baseName);
-            String fullPath = folderPath + "/" + fileName;
+            String fullPath = folderPath + "//" + fileName;
 
             BufferedImage f = loadFrameOrNull("/Resources/" + fullPath);
             if (f == null) f = loadFrameFromFile("Resources/" + fullPath);

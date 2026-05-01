@@ -1,16 +1,19 @@
 package GamePlatform;
 
 public enum PlatformType {
+    GRASS(true),
+    DIRT(true),
     METAL(true),
-    WOOD(true),
-    SAND(true);
-    private boolean Solid;
+    SAND(true),
+    WOOD(true);   
 
-   PlatformType(boolean Solid){
-    this.Solid = Solid;
+    private final boolean solid;
+
+    PlatformType(boolean solid) {
+        this.solid = solid;
     }
-    
-    public boolean isSolid(){
-        return Solid;
+
+    public boolean isSolid() {
+        return solid;
     }
 }

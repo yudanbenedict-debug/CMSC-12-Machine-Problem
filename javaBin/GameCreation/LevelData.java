@@ -19,21 +19,36 @@ public class LevelData {
     }
 
     public static LevelData createStarterLevel(int worldWidth, int worldHeight) {
+        int floorTop = worldHeight - 60;
         ArrayList<Platform> platforms = new ArrayList<>();
         ArrayList<Rectangle> enemies  = new ArrayList<>();
         ArrayList<Rectangle> items    = new ArrayList<>();
 
-        platforms.add(new Platform(worldWidth, 60, 0, worldHeight - 60, PlatformType.METAL)
+        // Floor
+        platforms.add(new Platform(worldWidth, 60, 0, floorTop, PlatformType.METAL)
+        .setCollisionBox(0, 0, 0, 0));
+
+        // Floating platforms — WOOD swapped to GRASS
+        platforms.add(new Platform(220, 20, 260,  floorTop - 180, PlatformType.GRASS)
+                .setCollisionBox(0, 0, 0, 0));
+        platforms.add(new Platform(220, 32, 640,  floorTop - 280, PlatformType.GRASS)
+                .setCollisionBox(0, 0, 0, 0));
+        platforms.add(new Platform(220, 32, 980,  floorTop - 220, PlatformType.GRASS)
+                .setCollisionBox(0, 0, 0, 0));
+        platforms.add(new Platform(200, 32, 1400, floorTop - 160, PlatformType.GRASS)
+                .setCollisionBox(0, 0, 0, 0));
+        platforms.add(new Platform(200, 32, 1800, floorTop - 300, PlatformType.GRASS)
+                .setCollisionBox(0, 0, 0, 0));
+        platforms.add(new Platform(220, 32, 2200, floorTop - 200, PlatformType.GRASS)
                 .setCollisionBox(0, 0, 0, 0));
 
-        platforms.add(new Platform(220, 30, 260,  worldHeight - 180, PlatformType.WOOD)
-                .setCollisionBox(0, 0, 0, 0));
-        platforms.add(new Platform(220, 30, 640,  worldHeight - 280, PlatformType.WOOD)
-                .setCollisionBox(0, 0, 0, 0));
-        platforms.add(new Platform(220, 30, 980,  worldHeight - 220, PlatformType.WOOD)
+        // SAND platform
+        platforms.add(new Platform(240, 32, 2600, floorTop - 260, PlatformType.SAND)
                 .setCollisionBox(0, 0, 0, 0));
 
-        int floorTop = worldHeight - 60;
+        // DIRT raised block
+        platforms.add(new Platform(180, 32, 3100, floorTop - 180, PlatformType.DIRT)
+                .setCollisionBox(0, 0, 0, 0));
 
         enemies.add(new Rectangle(800,  floorTop - 36, 40, 1));   // SLIME
         enemies.add(new Rectangle(1400, floorTop - 64, 48, 1));   // GOBLIN

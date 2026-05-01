@@ -4,6 +4,8 @@ import Entities.Enemies;
 import Entities.Player;
 import GamePlatform.Platform;
 import GamePlatform.PlatformType;
+import Loaders.TileAssetLoader;
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -14,6 +16,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
@@ -47,6 +51,7 @@ public class GamePanel extends JPanel implements Runnable {
         level = new Level(viewportWidth, viewportHeight);
         installInput();
 
+        TileAssetLoader.init(); 
         //TODO: add this to a method later:
 
         addMouseListener(new MouseAdapter() {
@@ -205,25 +210,40 @@ public class GamePanel extends JPanel implements Runnable {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+
         PlatformType type = PlatformType.WOOD;
         Platform platform = new Platform(30, 100, type);
+
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        platform.createPlatforms(g, 5, cameraX);
         drawLevel(g2);
         drawHUD(g2);
-
         g2.dispose();
     }
 
     private void drawLevel(Graphics2D g2) {
         // ── Platforms ─────────────────────────────────────────────────────────
-        g2.setColor(new Color(120, 120, 120));
-        for (Platform platform : level.getPlatforms()) {
-            Rectangle b = platform.getBounds();
-            g2.fillRoundRect(b.x - cameraX, b.y, b.width, b.height, 8, 8);
-        }
+        int tileSize = TileAssetLoader.TILE_SIZE;
+    for (Platform platform : level.getPlatforms()) {
+        Rectangle b        = platform.getBounds();
+        BufferedImage tile = TileAssetLoader.getTile(platform.getType());
+        int platRight      = b.x + b.width;
 
+        for (int tileX = b.x; tileX < platRight; tileX += tileSize) {
+            int drawX    = tileX - cameraX;
+            int colWidth = Math.min(tileSize, platRight - tileX);
+
+            for (int tileY = b.y; tileY < b.y + b.height; tileY += tileSize) {
+                int rowHeight = Math.min(tileSize, b.y + b.height - tileY);
+                g2.drawImage(tile,
+                    drawX,            tileY,
+                    drawX + colWidth, tileY + rowHeight,
+                    0,        0,
+                    colWidth, rowHeight,
+                    null);
+            }
+        }
+    }
         // ── Items ─────────────────────────────────────────────────────────────
         //still no logic for retrieving, implement asap
         g2.setColor(new Color(245, 220, 80));
