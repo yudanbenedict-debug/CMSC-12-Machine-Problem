@@ -18,19 +18,22 @@ public class Gun extends Weapons{
     //for super purposes
     public Gun(){
         super(WeaponsType.GUN, CD);    }
-    @Override
-    public void tick(){
-        super.tick();
-        if (reloading) {
-            reloadTimer--;
-            if (reloadTimer <= 0) {
-                ammo = MAX_AMMO;
-                reloading = false;
+        @Override
+        public void tick(){
+            super.tick();
+            if (reloading) {
+                reloadTimer--;
+                if (reloadTimer <= 0) {
+                    ammo = MAX_AMMO;
+                    reloading = false;
+                }
             }
+            for (Bullet b : bullets) {
+                b.tick();
+            }
+        
+            bullets.removeIf(b -> !b.isActive());
         }
-
-        bullets.removeIf(b -> !b.isActive());
-    }
     @Override
     public boolean tryAttack(float hx, float hy, float hw, float hh, boolean facingRight){
         if(!isReady() || ammo <= 0){
@@ -42,7 +45,7 @@ public class Gun extends Weapons{
         float bx = facingRight ? hx + hw : hx;
         float by = hy + hh / 2f;
 
-        bullets.add(new Bullet(bx, by, facingRight, 18f));
+        bullets.add(new Bullet(bx, by, facingRight, 10f));
         return true;
     }
 

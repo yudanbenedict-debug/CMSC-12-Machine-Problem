@@ -4,7 +4,7 @@ import java.awt.Rectangle;
 public class Bullet {
     //make the bullet moving instead of hit-reg type of gun
     private static final float SPEED = 18f;
-    private static final int MAX_RANGE = 140000; //i still don't know why this isn't registering unless close range.
+    private static final int MAX_RANGE = 1400; //i still don't know why this isn't registering unless close range.
 
     //bullet pos/miscs
     private float x,y;
@@ -21,6 +21,7 @@ public class Bullet {
     }
 
     //separate tick for bullet
+    //still not properly implemented since game breaks when using it.
     public void tick(){
         if(!active){
             return;
