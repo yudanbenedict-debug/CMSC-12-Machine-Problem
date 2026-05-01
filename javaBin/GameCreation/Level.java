@@ -11,6 +11,7 @@ import Entities.Enemies;
 import Entities.EnemiesType;
 import Entities.Player;
 import GamePlatform.Platform;
+import Weapons.*;
 
 public class Level {
 
@@ -88,7 +89,10 @@ public class Level {
             inputState.isMoveLeft(),
             inputState.isMoveRight(),
             inputState.isJumpPressed(),
-            inputState.isRunning()
+            inputState.isRunning(),
+            inputState.isAttackPressed(),
+            inputState.getWeaponSlot(),
+            inputState.isReloadPressed()
         );
 
         float previousX = player.getX();
@@ -100,6 +104,8 @@ public class Level {
 
         updateEnemies();
         handleEnemyPlayerInteraction();
+
+        handleWeaponHits();
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -243,43 +249,94 @@ public class Level {
 
         if (contactDamageCooldown > 0) contactDamageCooldown--;
     }
-
+    //--START OF DEBUG TESTING
     //Stomping Interacrtion
     //Jumps on enemy then damages
     //Change this later using the weapon class.
+    // private void handleEnemyPlayerInteraction() {
+    //     Rectangle playerBounds = player.getBounds();
+    //     float playerBottom     = player.getY() + player.getHeight();
+    //     float playerVelY       = player.getVerticalVelocity();
+
+    //     for (Enemies e : enemies) {
+    //         if (!e.isAlive()) continue;
+
+    //         Rectangle eb = e.getBounds();
+    //         if (!playerBounds.intersects(eb)) continue;
+
+    //         float enemyTop   = eb.y;
+    //         boolean stomping = playerVelY > 0
+    //                            && playerBottom - playerVelY <= enemyTop + 8f;
+    //         if (stomping) {
+    //             float stompDmg = Math.max(5f, playerVelY * 1.5f);
+    //             e.takeDamage(stompDmg);
+    //             player.setVerticalVelocity(-8f);
+    //             continue;   // skip contact damage this tick
+    //         }
+
+    //         if (contactDamageCooldown <= 0) {
+    //             player.takeDamage(e.getDamage());
+    //             contactDamageCooldown = CONTACT_DAMAGE_COOLDOWN;
+    //         }
+
+    //         if (e.isReadyToAttack()) {
+    //             player.takeDamage(e.getDamage());
+    //             contactDamageCooldown = CONTACT_DAMAGE_COOLDOWN;
+    //         }
+    //     }
+    // }
+    //END OF DEBUG TESTING (REMOVE COMMENT IF NEED TO IMPLEMENT STOMP LOGIC AGAIN)
+
     private void handleEnemyPlayerInteraction() {
         Rectangle playerBounds = player.getBounds();
-        float playerBottom     = player.getY() + player.getHeight();
-        float playerVelY       = player.getVerticalVelocity();
-
+ 
         for (Enemies e : enemies) {
             if (!e.isAlive()) continue;
-
+ 
             Rectangle eb = e.getBounds();
             if (!playerBounds.intersects(eb)) continue;
-
-            float enemyTop   = eb.y;
-            boolean stomping = playerVelY > 0
-                               && playerBottom - playerVelY <= enemyTop + 8f;
-            if (stomping) {
-                float stompDmg = Math.max(5f, playerVelY * 1.5f);
-                e.takeDamage(stompDmg);
-                player.setVerticalVelocity(-8f);
-                continue;   // skip contact damage this tick
-            }
-
+ 
+            // Contact damage only (no stomp)
             if (contactDamageCooldown <= 0) {
                 player.takeDamage(e.getDamage());
                 contactDamageCooldown = CONTACT_DAMAGE_COOLDOWN;
             }
-
+ 
             if (e.isReadyToAttack()) {
                 player.takeDamage(e.getDamage());
                 contactDamageCooldown = CONTACT_DAMAGE_COOLDOWN;
             }
         }
     }
-
+    private void handleWeaponHits() {
+        Gun   gun   = player.getGun();
+        Sword sword = player.getSword();
+ 
+        // -- Bullet vs enemy --
+        for (Bullet b : gun.getActiveBullets()) {
+            if (!b.isActive()) continue;
+            Rectangle bRect = b.getBounds();
+            for (Enemies e : enemies) {
+                if (!e.isAlive()) continue;
+                if (bRect.intersects(e.getBounds())) {
+                    e.takeDamage(b.getDamage());
+                    b.deactivate();
+                    break;   // one enemy per bullet
+                }
+            }
+        }
+ 
+        // -- Sword hitbox vs enemy --
+        Rectangle swHb = sword.getAttackHitBox();
+        if (swHb != null) {
+            for (Enemies e : enemies) {
+                if (!e.isAlive()) continue;
+                if (swHb.intersects(e.getBounds())) {
+                    e.takeDamage(sword.doDamage());
+                }
+            }
+        }
+    }
     //getters
     public Player getPlayer() { return player; }
 

@@ -8,7 +8,8 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
-
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseAdapter;
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
@@ -32,7 +33,9 @@ public class GamePanel extends JPanel implements Runnable {
     private volatile boolean moveRight;
     private volatile boolean jumpHeld;
     private volatile boolean isRunning;
-
+    private volatile boolean attackPressed;  // LMB
+    private volatile int     weaponSlot = 1; // 1,2
+    private volatile boolean reloadPressed;
     private int cameraX;
 
     public GamePanel(int viewportWidth, int viewportHeight) {
@@ -42,6 +45,19 @@ public class GamePanel extends JPanel implements Runnable {
         setDoubleBuffered(true);
         level = new Level(viewportWidth, viewportHeight);
         installInput();
+
+        //TODO: add this to a method later:
+
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) attackPressed = true;
+            }
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e)) attackPressed = false;
+            }
+        });
     }
 
     public void start() {
@@ -109,6 +125,25 @@ public class GamePanel extends JPanel implements Runnable {
         bindKey(inputMap, actionMap, "released W",     "jump-w-released",     false, false, false);
         bindKey(inputMap, actionMap, "pressed UP",     "jump-up-pressed",     false, false, true);
         bindKey(inputMap, actionMap, "released UP",    "jump-up-released",    false, false, false);
+
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_1, 0, false), "slot-1");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_2, 0, false), "slot-2");
+        actionMap.put("slot-1", new AbstractAction() {
+            @Override public void actionPerformed(ActionEvent e) { weaponSlot = 1; }
+        });
+        actionMap.put("slot-2", new AbstractAction() {
+            @Override public void actionPerformed(ActionEvent e) { weaponSlot = 2; }
+        });
+ 
+        // Reload key (R)
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_R, 0, false), "reload-pressed");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_R, 0, true),  "reload-released");
+        actionMap.put("reload-pressed",  new AbstractAction() {
+            @Override public void actionPerformed(ActionEvent e) { reloadPressed = true; }
+        });
+        actionMap.put("reload-released", new AbstractAction() {
+            @Override public void actionPerformed(ActionEvent e) { reloadPressed = false; }
+        });
     }
 
     private void bindKey(InputMap im, ActionMap am, String ks, String name,
@@ -127,7 +162,10 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     private void updateGame() {
-        LevelInput input = new LevelInput(moveLeft, moveRight, jumpHeld, isRunning);
+        LevelInput input = new LevelInput(
+            moveLeft, moveRight, jumpHeld, isRunning,
+            attackPressed, weaponSlot, reloadPressed
+        );
         level.update(input);
 
         Player player    = level.getPlayer();
@@ -198,6 +236,8 @@ public class GamePanel extends JPanel implements Runnable {
             enemy.draw(enemyG);
         }
         enemyG.dispose();
+
+        //Player
         Player player = level.getPlayer();
         Graphics2D playerG = (Graphics2D) g2.create();
         playerG.translate(-cameraX, 0);
