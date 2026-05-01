@@ -1,19 +1,37 @@
 package GamePlatform;
 
-import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
 
 public class Platform {
     protected float plat_width;
     protected float plat_height;
     protected float pos_x, pos_y;
     protected PlatformType plat_type; //the plat_type can have added types eventually as we go through making the game.
-    protected Graphics pl_graphics;
     private int collisionOffsetX;
     private int collisionOffsetY;
     private int collisionWidthAdjust;
     private int collisionHeightAdjust;
+    private static BufferedImage metalImg;
+    private static BufferedImage woodImg;
+    private static BufferedImage sandImg;
+
+    static {
+        try {
+            metalImg = javax.imageio.ImageIO.read(
+                Platform.class.getResource("/Resources/Block-Assets/IronBlock_Assets.png")
+            );
+            woodImg = javax.imageio.ImageIO.read(
+                Platform.class.getResource("/Resources/Block-Assets/GrassBlock_Assets.png")
+            );
+            sandImg = javax.imageio.ImageIO.read(
+                Platform.class.getResource("/Resources/Block-Assets/SandBlock02_Assets.png")
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 // Create an obj of this class  and the call the createPlatforms(); inside the GamePanel paintComponent(); and pass the graphics to createPlatforms();
     public Platform( float pos_x, float pos_y, PlatformType plat_type){
@@ -22,13 +40,10 @@ public class Platform {
         this.pos_x = pos_x;
         this.pos_y = pos_y;
         this.plat_type = plat_type;
-        this.pl_graphics = pl_graphics;
         this.collisionOffsetX = 0;
         this.collisionOffsetY = 0;
         this.collisionWidthAdjust = 0;
         this.collisionHeightAdjust = 0;
-        
-        
         
         
     }
@@ -38,23 +53,24 @@ public class Platform {
      * @param cameraX
      */
     public void createPlatforms(Graphics g, int quantity, int cameraX) {
-
+        BufferedImage img = null;
+        
+        
         for(int i = 0; i < quantity; i++) {
 
             int drawX = (int) this.pos_x + (i * 32) - cameraX;
             int drawY = (int) this.pos_y;
 
-            switch(plat_type) {
-                case METAL -> pl_graphics.setColor(new Color(90, 90, 90));
-
-                case WOOD -> pl_graphics.setColor(new Color(130, 84, 45));
-
-                case SAND -> pl_graphics.setColor(new Color(219, 183, 115));
-
-                default -> pl_graphics.setColor(Color.GRAY);
+            switch (plat_type) {
+                case METAL -> img = metalImg;
+                case WOOD  -> img = woodImg;
+                case SAND  -> img = sandImg;
+                default    -> img = null;
             }
 
-            pl_graphics.fillRect(drawX, drawY, 32, 32);
+            if (img != null) {
+                g.drawImage(img, drawX, drawY, 32, 32, null);
+            }
         }
     }
 

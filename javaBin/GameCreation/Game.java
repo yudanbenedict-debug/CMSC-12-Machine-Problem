@@ -1,10 +1,9 @@
 package GameCreation;
+import Exceptions.InvalidLevelDataException;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
-
-import Exceptions.InvalidLevelDataException;
 
 public class Game extends JFrame {
     private static final int    VIEWPORT_WIDTH  = 1280;
