@@ -16,7 +16,7 @@ public class Platform {
     private int collisionHeightAdjust;
 
 
-    public Platform( float pos_x, float pos_y, PlatformType plat_type, Graphics pl_graphics){
+    public Platform( float pos_x, float pos_y, PlatformType plat_type){
         this.plat_width = 32;
         this.plat_height = 32;
         this.pos_x = pos_x;
@@ -37,7 +37,7 @@ public class Platform {
      * @param pl_graphics
      * @param cameraX
      */
-    public void createPlatforms(int quantity, int cameraX) {
+    public void createPlatforms(Graphics g, int quantity, int cameraX) {
 
         for(int i = 0; i < quantity; i++) {
 

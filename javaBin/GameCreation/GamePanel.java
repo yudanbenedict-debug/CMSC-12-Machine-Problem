@@ -1,5 +1,9 @@
 package GameCreation;
 
+import Entities.Enemies;
+import Entities.Player;
+import GamePlatform.Platform;
+import GamePlatform.PlatformType;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -8,8 +12,8 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
 import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
@@ -17,9 +21,6 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
-import Entities.Enemies;
-import Entities.Player;
-import GamePlatform.Platform;
 
 public class GamePanel extends JPanel implements Runnable {
     private static final int    TARGET_FPS       = 60;
@@ -204,9 +205,11 @@ public class GamePanel extends JPanel implements Runnable {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+        PlatformType type = PlatformType.WOOD;
+        Platform platform = new Platform(300, 100, type);
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
+        platform.createPlatforms(g, 5, cameraX);
         drawLevel(g2);
         drawHUD(g2);
 
