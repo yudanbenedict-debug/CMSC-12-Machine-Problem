@@ -15,7 +15,7 @@ public class Platform {
     private int collisionWidthAdjust;
     private int collisionHeightAdjust;
 
-
+// Create an obj of this class  and the call the createPlatforms(); inside the GamePanel paintComponent(); and pass the graphics to createPlatforms();
     public Platform( float pos_x, float pos_y, PlatformType plat_type){
         this.plat_width = 32;
         this.plat_height = 32;
