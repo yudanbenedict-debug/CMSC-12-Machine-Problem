@@ -206,7 +206,7 @@ public class GamePanel extends JPanel implements Runnable {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         PlatformType type = PlatformType.WOOD;
-        Platform platform = new Platform(300, 100, type);
+        Platform platform = new Platform(30, 100, type);
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         platform.createPlatforms(g, 5, cameraX);
