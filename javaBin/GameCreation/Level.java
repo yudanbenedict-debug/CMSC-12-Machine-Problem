@@ -80,10 +80,6 @@ public class Level {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    //  Update loop
-    // ─────────────────────────────────────────────────────────────────────────────
-
     public void update(LevelInput inputState) {
         player.applyEngineState(
             inputState.isMoveLeft(),
@@ -180,47 +176,62 @@ public class Level {
 
     private void handlePlayerPlatformCollisions(float previousX, float previousY) {
         player.setGrounded(false);
-        Rectangle playerBounds = player.getBounds();
     
-        // Use hitbox bottom/top, not raw sprite coords
-        float previousHitboxBottom = previousY + player.getHitboxOffsetY() + player.getHitboxHeight();
-        float previousHitboxTop    = previousY + player.getHitboxOffsetY();
+        float previousBottom = previousY + player.getHeight();
+        float previousTop    = previousY;
+        float previousRight  = previousX + player.getWidth();
+        float previousLeft   = previousX;
     
         for (Platform platform : currentLevelData.getPlatforms()) {
-            Rectangle pb     = platform.getBounds();
+            Rectangle pb = platform.getBounds();
+    
             float platTop    = pb.y;
             float platBottom = pb.y + pb.height;
+            float platLeft   = pb.x;
+            float platRight  = pb.x + pb.width;
     
-            float curBottom  = playerBounds.y + playerBounds.height;
-            float curLeft    = playerBounds.x;
-            float curRight   = playerBounds.x + playerBounds.width;
+            float curBottom  = player.getY() + player.getHeight();
+            float curTop     = player.getY();
+            float curLeft    = player.getX();
+            float curRight   = player.getX() + player.getWidth();
     
-            boolean overlapsH  = curLeft < pb.x + pb.width && curRight > pb.x;
-            boolean crossesTop = previousHitboxBottom <= platTop + FLOOR_SNAP_TOLERANCE
-                                 && curBottom >= platTop;
+            boolean overlapsH = curLeft < platRight && curRight > platLeft;
+            boolean overlapsV = curTop  < platBottom && curBottom > platTop;
+            /// changes ehre
+            // Early exit: no overlap at all, skip this platform entirely.
+            if (!overlapsH || !overlapsV) continue;
     
-            if (overlapsH && player.getVerticalVelocity() >= 0 && crossesTop) {
-                // Snap feet (hitbox bottom) to platform top
-                player.setY(platTop - player.getHitboxOffsetY() - player.getHitboxHeight());
+            //Determine which axis the player entered from by checking where they
+            //were in the PREVIOUS frame relative to each platform edge.
+    
+            boolean fromTop    = previousBottom <= platTop    + FLOOR_SNAP_TOLERANCE;
+            boolean fromBottom = previousTop    >= platBottom - FLOOR_SNAP_TOLERANCE;
+            boolean fromLeft   = previousRight  <= platLeft   + FLOOR_SNAP_TOLERANCE;
+            boolean fromRight  = previousLeft   >= platRight  - FLOOR_SNAP_TOLERANCE;
+    
+            // Vertical resolution: landing on top
+            if (fromTop && player.getVerticalVelocity() >= 0) {
+                player.setY(platTop - player.getHeight());
                 player.setVerticalVelocity(0);
                 player.setGrounded(true);
-                playerBounds = player.getBounds();
             }
-    
-            if (!playerBounds.intersects(pb)) continue;
-    
-            if (previousHitboxBottom <= platTop) {
-                player.setY(platTop - player.getHitboxOffsetY() - player.getHitboxHeight());
+            // Vertical resolution: hitting the ceiling
+            else if (fromBottom && player.getVerticalVelocity() < 0) {
+                player.setY(platBottom);
                 player.setVerticalVelocity(0);
-                player.setGrounded(true);
-            } else if (previousHitboxTop >= platBottom) {
-                player.setY(platBottom - player.getHitboxOffsetY());
-                if (player.getVerticalVelocity() < 0) player.setVerticalVelocity(0);
             }
-    
-            playerBounds = player.getBounds();
+            // Horizontal resolution: hitting the left wall of the platform
+            else if (fromLeft) {
+                player.setX(platLeft - player.getWidth());
+            }
+            // Horizontal resolution: hitting the right wall of the platform
+            else if (fromRight) {
+                player.setX(platRight);
+            }
+            //end of changes
         }
     }
+    
     private void handleItemCollisions() {
         Rectangle playerBounds = player.getBounds();
         for (Rectangle itemBounds : currentLevelData.getItems()) {
@@ -312,7 +323,7 @@ public class Level {
         Gun   gun   = player.getGun();
         Sword sword = player.getSword();
  
-        // -- Bullet vs enemy --
+        // Bullet vs enemy
         for (Bullet b : gun.getActiveBullets()) {
             if (!b.isActive()) continue;
             Rectangle bRect = b.getBounds();
@@ -326,7 +337,7 @@ public class Level {
             }
         }
  
-        // -- Sword hitbox vs enemy --
+        //Sword hitbox vs enemy
         Rectangle swHb = sword.getAttackHitBox();
         if (swHb != null) {
             for (Enemies e : enemies) {
