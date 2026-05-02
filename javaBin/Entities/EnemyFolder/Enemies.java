@@ -26,7 +26,9 @@ import java.util.Random;
 public class Enemies extends LivingEntity {
 
     
-
+    private int stompCount = 0;
+    private final int maxStomps = 3;
+    private boolean dying = false;
     // ── AI states ─────────────────────────────────────────────────────────────
     public enum AIState { PATROL, CHASE, ATTACK, DEAD }
 
@@ -204,7 +206,21 @@ public class Enemies extends LivingEntity {
         y       += velY;
         grounded = false;
     }
+    
+    public void registerStomp() {
+        if (dying) return;
 
+        stompCount++;
+
+        if (stompCount >= maxStomps) {
+            dying = true;
+            setAlive(false); // stop normal behavior
+            
+        }
+    }
+    public boolean isDying() {
+        return dying;
+    }
     // ─────────────────────────────────────────────────────────────────────────
     //  Platform collision
     // ─────────────────────────────────────────────────────────────────────────

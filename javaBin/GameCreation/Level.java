@@ -220,7 +220,7 @@ public class Level {
         Rectangle playerBounds = player.getBounds();
 
         for (Enemies e : enemies) {
-            if (!e.isAlive()) continue;
+            if (!e.isAlive() && !e.isDying()) continue;
             if (!playerBounds.intersects(e.getBounds())) continue;
 
             // CHECK: player is falling
@@ -229,7 +229,7 @@ public class Level {
                 // CHECK: player is above enemy
                 if (player.getY() + player.getHeight() <= e.getY() + 10) {
 
-                    e.setAlive(false); // kill enemy
+                    e.registerStomp(); // kill enemy
 
                     player.setVerticalVelocity(-10); // bounce up
 
