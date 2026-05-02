@@ -1,16 +1,15 @@
 package Entities.EnemyFolder;
 
+import Animators.EnemyAnimator;
+import Animators.EnemyAnimator.SnapShot;
+import Entities.LivingEntity;
+import GamePlatform.Platform;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.util.List;
 import java.util.Random;
-
-import Animators.EnemyAnimator;
-import Animators.EnemyAnimator.SnapShot;
-import Entities.LivingEntity;
-import GamePlatform.Platform;
 
 /**
  * Concrete enemy class.
