@@ -1,7 +1,7 @@
 package GameCreation;
 
-import Entities.Enemies;
 import Entities.Player;
+import Entities.EnemyFolder.Enemies;
 import GamePlatform.Platform;
 import Loaders.TileAssetLoader;
 import java.awt.Color;

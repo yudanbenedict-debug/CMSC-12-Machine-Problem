@@ -1,11 +1,8 @@
 package Entities;
 
-import java.awt.Color;
+import Animators.PlayerAnimator;
+import Animators.PlayerAnimator.StateSnapshot;
 import Weapons.*;
-import java.awt.image.BufferedImage;
-import java.util.HashMap;
-
-import Loaders.SpriteLoader;
 
 import java.awt.Graphics;
 import java.awt.Rectangle;
@@ -23,6 +20,8 @@ public class Player extends LivingEntity {
     private static final int ATTACK_ANIM_DURATION = ATTACK_ANIMATION_FRAMES * ATTACK_ANIMATION_FRAMETIMES;
 
     private static final int NORMAL_WIDTH = 32;
+    private static final int NORMAL_HEIGHT = 48;
+    //increase width when shooting
     private static final int SHOOT_WIDTH = 40;
 
     private static final float SPRINT_MULTIPILIER = 1.6F;
@@ -46,25 +45,11 @@ public class Player extends LivingEntity {
     //
     private Gun gun = new Gun();
     private Sword sword = new Sword();
+    private boolean attackPressedLastFrame = false;
 
     private int slot = 1; // slot is 1/2 (1 for gun, 2 for sword... TODO: make sure gun ammo is not infinite).
-
-    private boolean attackPressedLastFrame = false;
-    //
-
-    private HashMap<String, Animation> animations = new HashMap<>();
-    private String currentState = "idle";
-
-    private BufferedImage[] walkFrames;
-    private BufferedImage[] idleFrames;
-    private BufferedImage[] jumpFrames;
-    private BufferedImage[] fallFrames;
-    private BufferedImage[] sprintingFrames;
-    private BufferedImage[] rollingFrames;
-    private BufferedImage[] sword_attack_frames;
-    private BufferedImage[] shootingFrames;
-
-    private Animation currentAnimation;
+    private PlayerAnimator animations;
+   
     //fancy-schmancy stuff
     private static final int JUMP_BUFFER_FRAMES = 8;
     private static final int COYOTE_FRAMES = 6;
@@ -72,7 +57,7 @@ public class Player extends LivingEntity {
     private int coyoteFrames;
 
     public Player(float velX, float velY, float x, float y) {
-        super(x, y, NORMAL_WIDTH, 48, 20.0f, 5.0f, 3.0f, 14.0f);
+        super(x, y, NORMAL_WIDTH, NORMAL_HEIGHT, 20.0f, 5.0f, 3.0f, 14.0f);
         this.velX = velX;
         this.velY = velY;
         this.goldCount = 0;
@@ -82,32 +67,10 @@ public class Player extends LivingEntity {
         this.gravity = 0.65f;
         this.jumpBufferFrames = 0;
         this.coyoteFrames = 0;
-        initialize();
+        this.animations = new PlayerAnimator(NORMAL_WIDTH, NORMAL_HEIGHT);
     }
 
-    private void initialize() {
-        BufferedImage sharedFrame = SpriteLoader.loadWalkBaseFrame((int) width, (int) height);
-
-        walkFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Walk", "player_walk", 8, sharedFrame);
-        idleFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Idle", "player_idle", 6, sharedFrame);
-        jumpFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Jump", "player_jump", 4, sharedFrame);
-        fallFrames     = SpriteLoader.loadImages("Player-Sprites/Player-Fall", "player_fall", 1, sharedFrame);
-        sprintingFrames = SpriteLoader.loadImages("Player-Sprites/Player-Run", "player_run", 8, sharedFrame);
-        sword_attack_frames = SpriteLoader.loadImages("Player-Sprites/Player-Sword-Attack", "player_sword", 5, sharedFrame);
-        shootingFrames = SpriteLoader.loadImages("Player-Sprites/Player-Gun_Attack", "player_gun", 5, sharedFrame);
-        rollingFrames  = new BufferedImage[]{ sharedFrame };
-
-        animations.put("walk",      new Animation(walkFrames,      8,  true));
-        animations.put("idle",      new Animation(idleFrames,      6, true));
-        animations.put("jump",      new Animation(jumpFrames,      4,  true));
-        animations.put("fall",      new Animation(fallFrames,      1,  true));
-        animations.put("rolling",   new Animation(rollingFrames,   8,  true));
-        animations.put("sword_attack", new Animation(sword_attack_frames, ATTACK_ANIMATION_FRAMETIMES, true));
-        animations.put("shooting", new Animation(shootingFrames, ATTACK_ANIMATION_FRAMETIMES, true));
-        animations.put("sprint", new Animation(sprintingFrames, 6, true));
-        currentAnimation = animations.get("idle");
-    }
-
+    
     public void jump() {
         isJumping = true;
         jumpBufferFrames = JUMP_BUFFER_FRAMES;
@@ -164,76 +127,21 @@ public class Player extends LivingEntity {
         // }
         gun.tick();
         sword.tick();
-
+        
+        if (attackAnimTimer > 0) attackAnimTimer--;
         updateAnimation();
     }
 
-        private void updateAnimation() {
-            String curState;
-    
-            // changes here for the weapon animation handler (for debugging) ----------------------------------------
-            if (attackAnimTimer > 0) {
-                attackAnimTimer--;
-                if (slot == 1) {
-                    curState = "shooting";
-                } else {
-                    curState = "sword_attack";
-                }
-                
-            }  // end of changes----------------------------------------
-            // make sure to add the rolling animation and crouching animation AFTER the attack animation.
-            // else if(rolling){
-            //     curState = "rolling";
-            // }
-            else if (!isGrounded) {
-                curState = (velY < 0) ? "jump" : "fall";
-            } else if (sprinting && Math.abs(velX) > 0.5f) {
-                curState = "sprint";
-            } else if (Math.abs(velX) > 0.5f) {
-                curState = "walk";
-            } else {
-                curState = "idle";
-            }
-    
-            if (!curState.equals(currentState)) {
-                currentState = curState;
-                Animation next = animations.get(curState);
-                if (next != null) next.resetanimation();
-                currentAnimation = next;
-            }
-
-            if (currentAnimation != null) currentAnimation.animate();
-        }
+    private void updateAnimation() {
+        //use the inner class snapshot
+        PlayerAnimator.StateSnapshot snapshot = new StateSnapshot(isGrounded, velX, velY, sprinting, attackAnimTimer, slot);
+        animations.update(snapshot);
+     
+    }
 
     @Override
     public void draw(Graphics g) {
-        if (currentAnimation == null) return;
-        BufferedImage frame = currentAnimation.getCurrentFrame();
-        if (frame == null) return;
-    
-        int drawX = (int) x;
-        int drawWidth = (int) width;
-    
-        if (!facingRight) {
-            drawX += drawWidth;
-            drawWidth = -drawWidth;
-        }
-    //FOR DEBUGGING
-        int drawY = (int) y;
-        g.drawImage(frame, drawX, drawY, drawWidth, (int) height, null);
-    
-   
-        Rectangle hitbox = getBounds();
-        g.setColor(Color.RED);
-        g.drawRect(hitbox.x, hitbox.y, hitbox.width, hitbox.height);
-    
-        
-        g.setColor(Color.GREEN);
-        g.fillOval((int)x - 3, (int)y - 3, 6, 6);
-    
-        g.setColor(Color.BLUE);
-        g.fillOval(drawX - 3, drawY - 3, 6, 6);
-    //END OF DEBUGGING
+        animations.draw(g, (int) x, (int) y, (int) width, (int) height, facingRight);
     }
     
     // public int getHitboxOffsetY() {
@@ -297,7 +205,6 @@ public class Player extends LivingEntity {
     }
     public void tryAttack(){
         Rectangle atk_rect = getBounds();
-        //bad naming but its just the the rectangle/hitbox for the attack.
         boolean fired;
         float hx = atk_rect.x, hy = atk_rect.y, hw = atk_rect.width, hh = atk_rect.height;
         if(slot == 1){
@@ -311,37 +218,7 @@ public class Player extends LivingEntity {
             attackAnimTimer = ATTACK_ANIM_DURATION;
         }
     }
-    //END OF VERY IMPORTANT STUFF THAT ARE SOMEHOW LINES AFTER 200 ---------------
-
-    //item logic still not finished (do not mind until the item.java is finished)
-    public void applyBuff(String buffType, int durationSeconds) {
-        if (buffType == null) return;
-        switch (buffType) {
-            case "SPEED_BOOST":   walk_speed  = Math.max(1.0f, walk_speed  + 2.0f); break;
-            case "DOUBLE_JUMP":   jump_height = Math.max(1.0f, jump_height + 5.0f); break;
-            case "INVINCIBILITY": break; // placeholder
-            default: break;
-        }
-    }
-
-    public void applyDebuff(String buffType, int durationSeconds) {
-        if (buffType == null) return;
-        switch (buffType) {
-            case "DEBUFF_SLOWNESS":
-                walk_speed = Math.max(1.0f, walk_speed - 2.0f);
-                break;
-            case "DEBUFF_REVERSE_CONTROLS":
-                boolean temp = movingLeft;
-                movingLeft  = movingRight;
-                movingRight = temp;
-                break;
-            default: break;
-        }
-    }
-    //sprite loading
-    //only walkanimation for now since the other sprites are still not uploaded
-    //for walk frames since it is pretty necessary
-
+    //END OF VERY IMPORTANT STUFF;
     @Override
     public void onDeath() { 
         
