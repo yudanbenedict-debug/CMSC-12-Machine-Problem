@@ -200,10 +200,7 @@ public class Level {
         while (it.hasNext()) {
             Enemies e = it.next();
             e.update(platforms, px, py);
-            if (!e.isAlive() && !e.isDying()){
-                e.onDeath();   // hook for loot drops, score, sound, etc.
-                it.remove();
-            }
+            
             if (e.isDeathAnimationFinished()) {
                 e.onDeath();   // hook for loot drops, score, sound, etc.
                 it.remove();
@@ -223,7 +220,9 @@ public class Level {
         Rectangle playerBounds = player.getBounds();
 
         for (Enemies e : enemies) {
-            if (!e.isAlive() && !e.isDying()) continue;
+            if (!e.isAlive() && !e.isDying()){
+                updateEnemies();
+            }
             if (!playerBounds.intersects(e.getBounds())) continue;
 
             // CHECK: player is falling
