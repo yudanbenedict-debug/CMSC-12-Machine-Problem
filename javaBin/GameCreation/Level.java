@@ -1,16 +1,15 @@
 package GameCreation;
 
+import Entities.EnemyFolder.*;
+import Entities.Player;
+import Exceptions.InvalidLevelDataException;
+import GamePlatform.Platform;
+import Weapons.*;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-
-import Exceptions.InvalidLevelDataException;
-import Entities.EnemyFolder.*;
-import Entities.Player;
-import GamePlatform.Platform;
-import Weapons.*;
 
 public class Level {
 
@@ -201,6 +200,10 @@ public class Level {
         while (it.hasNext()) {
             Enemies e = it.next();
             e.update(platforms, px, py);
+            if (!e.isAlive() && !e.isDying()){
+                e.onDeath();   // hook for loot drops, score, sound, etc.
+                it.remove();
+            }
             if (e.isDeathAnimationFinished()) {
                 e.onDeath();   // hook for loot drops, score, sound, etc.
                 it.remove();
