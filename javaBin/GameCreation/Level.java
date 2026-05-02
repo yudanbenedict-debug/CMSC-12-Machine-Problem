@@ -7,8 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import Exceptions.InvalidLevelDataException;
-import Entities.Enemies;
-import Entities.EnemiesType;
+import Entities.EnemyFolder.*;
 import Entities.Player;
 import GamePlatform.Platform;
 import Weapons.*;
@@ -17,7 +16,6 @@ public class Level {
 
     public static final int    DEFAULT_WORLD_WIDTH  = 4000;
     public static final int    DEFAULT_WORLD_HEIGHT = 720;
-    //add player-data.txt, 
     public static final String PLAYER_DATA_PATH     = "javaBin/LevelFile/player-data.txt";
 
     private static final float FLOOR_SNAP_TOLERANCE    = 4.0f;
@@ -36,7 +34,9 @@ public class Level {
 
     private int contactDamageCooldown = 0;
 
-    // ─────────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
+    //  Construction
+    // ─────────────────────────────────────────────────────────────────────────
 
     public Level(int viewportWidth, int viewportHeight) {
         this(viewportWidth, viewportHeight, DEFAULT_WORLD_WIDTH, DEFAULT_WORLD_HEIGHT);
@@ -66,19 +66,19 @@ public class Level {
             throw new InvalidLevelDataException("World dimensions must be >= viewport dimensions.");
     }
 
-    //Handle enemy spawning
+    // ─────────────────────────────────────────────────────────────────────────
+    //  Enemy spawning
+    // ─────────────────────────────────────────────────────────────────────────
+
     private void spawnEnemies() {
-        for (Rectangle spawn : currentLevelData.getEnemies()) {
-            EnemiesType type;
-            switch (spawn.width) {
-                case 48:  type = EnemiesType.GOBLIN;   break;
-                case 56:  type = EnemiesType.ORC;      break;
-                case 64:  type = EnemiesType.SKELETON; break;
-                default:  type = EnemiesType.SLIME;    break;
-            }
-            enemies.add(new Enemies(type, spawn.x, spawn.y));
+        for (LevelData.EnemySpawn spawn : currentLevelData.getEnemies()) {
+            enemies.add(new Enemies(spawn.type, spawn.x, spawn.y));
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  Main update
+    // ─────────────────────────────────────────────────────────────────────────
 
     public void update(LevelInput inputState) {
         player.applyEngineState(
@@ -94,19 +94,19 @@ public class Level {
         float previousX = player.getX();
         float previousY = player.getY();
         player.update();
+
         handleWorldBounds();
         handlePlayerPlatformCollisions(previousX, previousY);
         handleItemCollisions();
 
         updateEnemies();
         handleEnemyPlayerInteraction();
-
         handleWeaponHits();
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
     //  World bounds
-    // ─────────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
 
     private void handleWorldBounds() {
         if (player.getX() < 0) {
@@ -114,6 +114,7 @@ public class Level {
         } else if (player.getX() + player.getWidth() > worldWidth) {
             player.setX(worldWidth - player.getWidth());
         }
+
         if (player.getY() < 0) {
             player.setY(0);
             player.setVerticalVelocity(0);
@@ -124,124 +125,72 @@ public class Level {
         }
     }
 
-   //player collission with platform
-   //to be fixed: platform bottom isn't registered.
-    //debug
-
-    // private void handlePlayerPlatformCollisions(float previousX, float previousY) {
-    //     player.setGrounded(false);
-    //     Rectangle playerBounds = player.getBounds();
-    //     float previousBottom   = previousY + player.getHeight();
-    //     float previousTop      = previousY;
-
-    //     for (Platform platform : currentLevelData.getPlatforms()) {
-    //         Rectangle pb      = platform.getBounds();
-    //         float platLeft    = pb.x;
-    //         float platRight   = pb.x + pb.width;
-    //         float platTop     = pb.y;
-    //         float platBottom  = pb.y + pb.height;
-
-    //         float curBottom   = player.getY() + player.getHeight();
-    //         float curLeft     = player.getX();
-    //         float curRight    = player.getX() + player.getWidth();
-
-    //         boolean overlapsH  = curLeft < platRight && curRight > platLeft;
-    //         boolean crossesTop = previousBottom <= platTop + FLOOR_SNAP_TOLERANCE
-    //                              && curBottom >= platTop;
-
-    //         if (overlapsH && player.getVerticalVelocity() >= 0 && crossesTop) {
-    //             player.setY(platTop - player.getHitboxOffsetY() - player.getHitboxHeight());
-    //             player.setVerticalVelocity(0);
-    //             player.setGrounded(true);
-    //             playerBounds = player.getBounds();
-    //         }
-
-    //         if (!playerBounds.intersects(pb)) continue;
-
-    //         // Vertical push-out
-    //         if (previousBottom <= platTop) {
-    //             player.setY(platTop - player.getHitboxOffsetY() - player.getHitboxHeight());
-    //             player.setVerticalVelocity(0);
-    //             player.setGrounded(true);
-    //         } else if (previousTop >= platBottom) {
-    //             player.setY(platBottom - player.getHitboxOffsetY());
-    //             if (player.getVerticalVelocity() < 0) player.setVerticalVelocity(0);
-    //         }
-
-    //         playerBounds = player.getBounds();
-    //     }
-    // }
-
-    // end of debug
+    // ─────────────────────────────────────────────────────────────────────────
+    //  Player-platform collision
+    // ─────────────────────────────────────────────────────────────────────────
 
     private void handlePlayerPlatformCollisions(float previousX, float previousY) {
         player.setGrounded(false);
-    
+
         float previousBottom = previousY + player.getHeight();
         float previousTop    = previousY;
         float previousRight  = previousX + player.getWidth();
         float previousLeft   = previousX;
-    
+
         for (Platform platform : currentLevelData.getPlatforms()) {
             Rectangle pb = platform.getBounds();
-    
+
             float platTop    = pb.y;
             float platBottom = pb.y + pb.height;
             float platLeft   = pb.x;
             float platRight  = pb.x + pb.width;
-    
-            float curBottom  = player.getY() + player.getHeight();
-            float curTop     = player.getY();
-            float curLeft    = player.getX();
-            float curRight   = player.getX() + player.getWidth();
-    
+
+            float curBottom = player.getY() + player.getHeight();
+            float curTop    = player.getY();
+            float curLeft   = player.getX();
+            float curRight  = player.getX() + player.getWidth();
+
             boolean overlapsH = curLeft < platRight && curRight > platLeft;
             boolean overlapsV = curTop  < platBottom && curBottom > platTop;
-            /// changes ehre
-            // Early exit: no overlap at all, skip this platform entirely.
+
             if (!overlapsH || !overlapsV) continue;
-    
-            //Determine which axis the player entered from by checking where they
-            //were in the PREVIOUS frame relative to each platform edge.
-    
+
             boolean fromTop    = previousBottom <= platTop    + FLOOR_SNAP_TOLERANCE;
             boolean fromBottom = previousTop    >= platBottom - FLOOR_SNAP_TOLERANCE;
             boolean fromLeft   = previousRight  <= platLeft   + FLOOR_SNAP_TOLERANCE;
             boolean fromRight  = previousLeft   >= platRight  - FLOOR_SNAP_TOLERANCE;
-    
-            // Vertical resolution: landing on top
+
             if (fromTop && player.getVerticalVelocity() >= 0) {
                 player.setY(platTop - player.getHeight());
                 player.setVerticalVelocity(0);
                 player.setGrounded(true);
-            }
-            // Vertical resolution: hitting the ceiling
-            else if (fromBottom && player.getVerticalVelocity() < 0) {
+            } else if (fromBottom && player.getVerticalVelocity() < 0) {
                 player.setY(platBottom);
                 player.setVerticalVelocity(0);
-            }
-            // Horizontal resolution: hitting the left wall of the platform
-            else if (fromLeft) {
+            } else if (fromLeft) {
                 player.setX(platLeft - player.getWidth());
-            }
-            // Horizontal resolution: hitting the right wall of the platform
-            else if (fromRight) {
+            } else if (fromRight) {
                 player.setX(platRight);
             }
-            //end of changes
         }
     }
-    
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  Item collisions
+    // ─────────────────────────────────────────────────────────────────────────
+
     private void handleItemCollisions() {
         Rectangle playerBounds = player.getBounds();
         for (Rectangle itemBounds : currentLevelData.getItems()) {
             if (playerBounds.intersects(itemBounds)) {
-                // Placeholder: item collection logic goes here.
+                // TODO: item collection logic
             }
         }
     }
 
-
+    // ─────────────────────────────────────────────────────────────────────────
+    //  Enemy update + removal
+    // ─────────────────────────────────────────────────────────────────────────
 
     private void updateEnemies() {
         List<Platform> platforms = currentLevelData.getPlatforms();
@@ -253,77 +202,45 @@ public class Level {
             Enemies e = it.next();
             e.update(platforms, px, py);
             if (e.isDeathAnimationFinished()) {
-                e.onDeath();    // hook for loot drops, score, sound, etc.
+                e.onDeath();   // hook for loot drops, score, sound, etc.
                 it.remove();
             }
         }
 
         if (contactDamageCooldown > 0) contactDamageCooldown--;
     }
-    //--START OF DEBUG TESTING
-    //Stomping Interacrtion
-    //Jumps on enemy then damages
-    //Change this later using the weapon class.
-    // private void handleEnemyPlayerInteraction() {
-    //     Rectangle playerBounds = player.getBounds();
-    //     float playerBottom     = player.getY() + player.getHeight();
-    //     float playerVelY       = player.getVerticalVelocity();
 
-    //     for (Enemies e : enemies) {
-    //         if (!e.isAlive()) continue;
-
-    //         Rectangle eb = e.getBounds();
-    //         if (!playerBounds.intersects(eb)) continue;
-
-    //         float enemyTop   = eb.y;
-    //         boolean stomping = playerVelY > 0
-    //                            && playerBottom - playerVelY <= enemyTop + 8f;
-    //         if (stomping) {
-    //             float stompDmg = Math.max(5f, playerVelY * 1.5f);
-    //             e.takeDamage(stompDmg);
-    //             player.setVerticalVelocity(-8f);
-    //             continue;   // skip contact damage this tick
-    //         }
-
-    //         if (contactDamageCooldown <= 0) {
-    //             player.takeDamage(e.getDamage());
-    //             contactDamageCooldown = CONTACT_DAMAGE_COOLDOWN;
-    //         }
-
-    //         if (e.isReadyToAttack()) {
-    //             player.takeDamage(e.getDamage());
-    //             contactDamageCooldown = CONTACT_DAMAGE_COOLDOWN;
-    //         }
-    //     }
-    // }
-    //END OF DEBUG TESTING (REMOVE COMMENT IF NEED TO IMPLEMENT STOMP LOGIC AGAIN)
+    // ─────────────────────────────────────────────────────────────────────────
+    //  Enemy-player damage
+    // ─────────────────────────────────────────────────────────────────────────
 
     private void handleEnemyPlayerInteraction() {
+        if (contactDamageCooldown > 0) return;
+
         Rectangle playerBounds = player.getBounds();
- 
+
         for (Enemies e : enemies) {
             if (!e.isAlive()) continue;
- 
-            Rectangle eb = e.getBounds();
-            if (!playerBounds.intersects(eb)) continue;
- 
-            // Contact damage only (no stomp)
-            if (contactDamageCooldown <= 0) {
-                player.takeDamage(e.getDamage());
-                contactDamageCooldown = CONTACT_DAMAGE_COOLDOWN;
-            }
- 
-            if (e.isReadyToAttack()) {
-                player.takeDamage(e.getDamage());
-                contactDamageCooldown = CONTACT_DAMAGE_COOLDOWN;
-            }
+            if (!playerBounds.intersects(e.getBounds())) continue;
+
+            // isReadyToAttack() fires the deliberate attack damage;
+            // otherwise apply contact damage. Only one source per cooldown window.
+            float dmg = e.isReadyToAttack() ? e.getDamage() * 2f : e.getDamage();
+            player.takeDamage(dmg);
+            contactDamageCooldown = CONTACT_DAMAGE_COOLDOWN;
+            break; // one enemy damages the player per cooldown window
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  Weapon hits
+    // ─────────────────────────────────────────────────────────────────────────
+
     private void handleWeaponHits() {
         Gun   gun   = player.getGun();
         Sword sword = player.getSword();
- 
-        // Bullet vs enemy
+
+        // ── Bullets vs enemies ────────────────────────────────────────────────
         for (Bullet b : gun.getActiveBullets()) {
             if (!b.isActive()) continue;
             Rectangle bRect = b.getBounds();
@@ -332,12 +249,12 @@ public class Level {
                 if (bRect.intersects(e.getBounds())) {
                     e.takeDamage(b.getDamage());
                     b.deactivate();
-                    break;   // one enemy per bullet
+                    break;  // one enemy per bullet
                 }
             }
         }
- 
-        //Sword hitbox vs enemy
+
+        // ── Sword vs enemies ──────────────────────────────────────────────────
         Rectangle swHb = sword.getAttackHitBox();
         if (swHb != null) {
             for (Enemies e : enemies) {
@@ -348,18 +265,20 @@ public class Level {
             }
         }
     }
-    //getters
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  Getters
+    // ─────────────────────────────────────────────────────────────────────────
+
     public Player getPlayer() { return player; }
 
     public List<Platform> getPlatforms() {
         return Collections.unmodifiableList(currentLevelData.getPlatforms());
     }
 
-   
-    public List<Rectangle> getEnemyZones() {
+    public List<LevelData.EnemySpawn> getEnemySpawns() {
         return Collections.unmodifiableList(currentLevelData.getEnemies());
     }
-
 
     public List<Enemies> getEnemies() {
         return Collections.unmodifiableList(enemies);

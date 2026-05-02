@@ -83,7 +83,7 @@ public class EntryScreen extends JFrame {
     private void playMusic() throws ResourceLoadException{
         try {
             File file = new File("Resources/Sounds/Newer-Days.wav");
-    
+            //for debug (remove once fully implemented)
             System.out.println("DEBUG path: " + file.getAbsolutePath());
     
             if (!file.exists()) {

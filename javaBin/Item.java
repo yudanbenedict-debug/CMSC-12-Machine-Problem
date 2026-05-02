@@ -39,18 +39,18 @@ public class Item extends Entity {
         }
     }
 
-     public void applyEffect(Player player) {
-        if (!isActive) return;  
+    //  public void applyEffect(Player player) {
+    //     if (!isActive) return;  
         
         
-        if (buffType.name().startsWith("DEBUFF")) {
-            player.applyDebuff(buffType.name(), duration);
-        } else {
-            player.applyBuff(buffType.name(), duration);
-        }
+    //     if (buffType.name().startsWith("DEBUFF")) {
+    //         player.applyDebuff(buffType.name(), duration);
+    //     } else {
+    //         player.applyBuff(buffType.name(), duration);
+    //     }
         
-        isActive = false;  
-    }
+    //     isActive = false;  
+    // }
 
     public EffectType getBuffType() {
         return buffType;

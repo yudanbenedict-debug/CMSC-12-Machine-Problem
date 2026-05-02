@@ -1,4 +1,4 @@
-package Entities;
+package Animators;
 import java.awt.image.BufferedImage;
 
 public class Animation {
