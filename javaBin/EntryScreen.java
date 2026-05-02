@@ -27,7 +27,7 @@ import javax.sound.sampled.Clip;
 import java.io.InputStream;
 
 
-//public class EntryScreen extends JFrame {
+public class EntryScreen extends JFrame {
     private Clip backgroundMusic;
 
     private final ScrollingBackgroundPanel backgroundPanel;
@@ -190,7 +190,7 @@ import java.io.InputStream;
         }
     }
 
-    ublic static void main(String[] args) {
+    public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new EntryScreen().setVisible(true));
     }
 }

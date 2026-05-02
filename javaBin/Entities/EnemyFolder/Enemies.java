@@ -25,6 +25,8 @@ import java.util.Random;
  */
 public class Enemies extends LivingEntity {
 
+    
+
     // ── AI states ─────────────────────────────────────────────────────────────
     public enum AIState { PATROL, CHASE, ATTACK, DEAD }
 
@@ -52,7 +54,7 @@ public class Enemies extends LivingEntity {
     private boolean facingRight;
 
     // ── AI state ──────────────────────────────────────────────────────────────
-    private boolean alive;
+    private boolean alive = true;
     private AIState aiState;
     private int     idleTimer;
     private int     attackCooldown;
@@ -355,6 +357,9 @@ public class Enemies extends LivingEntity {
     public void onDeath() { }
 
     public boolean isAlive() { return alive; }
+    public void setAlive(boolean alive) {
+        this.alive = alive;
+    }
 
     /** True once dead AND the death animation has fully played through. */
     public boolean isDeathAnimationFinished() {

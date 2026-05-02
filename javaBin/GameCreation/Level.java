@@ -223,12 +223,25 @@ public class Level {
             if (!e.isAlive()) continue;
             if (!playerBounds.intersects(e.getBounds())) continue;
 
-            // isReadyToAttack() fires the deliberate attack damage;
-            // otherwise apply contact damage. Only one source per cooldown window.
+            // CHECK: player is falling
+            if (player.getVerticalVelocity() > 0) {
+
+                // CHECK: player is above enemy
+                if (player.getY() + player.getHeight() <= e.getY() + 10) {
+
+                    e.setAlive(false); // kill enemy
+
+                    player.setVerticalVelocity(-10); // bounce up
+
+                    continue; // skip damage
+                }
+            }
+
+           
             float dmg = e.isReadyToAttack() ? e.getDamage() * 2f : e.getDamage();
             player.takeDamage(dmg);
             contactDamageCooldown = CONTACT_DAMAGE_COOLDOWN;
-            break; // one enemy damages the player per cooldown window
+            break;
         }
     }
 
