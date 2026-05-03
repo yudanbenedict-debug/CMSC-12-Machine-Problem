@@ -4,7 +4,10 @@ import Entities.EnemyFolder.Enemies;
 import Entities.Player;
 import GamePlatform.Platform;
 import Handlers.InputHandler;
+import Loaders.MusicPlayer;
 import Loaders.TileAssetLoader;
+import DataLoader.PlayerSaveData;
+import DataLoader.SaveManager;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -74,6 +77,7 @@ public class GamePanel extends JPanel implements Runnable {
         running    = true;
         gameThread = new Thread(this, "engine-test-loop");
         gameThread.start();
+        MusicPlayer.play("Resources/Sounds/gameplay.wav");
         SwingUtilities.invokeLater(this::requestFocusInWindow);
     }
     public void pauseGame() {
@@ -92,7 +96,21 @@ public class GamePanel extends JPanel implements Runnable {
     public void resumeGame() {
         paused = false;
         pauseMenu.setVisible(false);
-        requestFocusInWindow(); // regain input
+        requestFocusInWindow();
+    }
+
+    /** Saves current game state to slot 1. Returns true on success. */
+    public boolean saveGame() {
+        PlayerSaveData data = level.buildSaveData();
+        return SaveManager.save(data, 1);
+    }
+
+    /** Loads save slot 1 into the running level. Returns true if a save existed. */
+    public boolean loadFromSave() {
+        PlayerSaveData data = SaveManager.load(1);
+        if (data == null) return false;
+        level.loadFromSave(data);
+        return true;
     }
     
 

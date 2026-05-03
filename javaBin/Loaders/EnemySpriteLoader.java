@@ -6,6 +6,8 @@ import java.util.EnumMap;
 import java.util.Map;
 
 import Entities.EnemyFolder.EnemiesType;
+import DataLoader.EnemyDataLoader;
+import DataLoader.EnemyDataLoader.EnemyData;
 
 /**
  * Static sprite cache for all enemy types.
@@ -58,39 +60,40 @@ public class EnemySpriteLoader {
     }
     
     private static EnemyFrameSet load(EnemiesType type) {
-        String enemy = getEnemyFolder(type); // enemy1, enemy2, etc.
-        String basePath = "Enemy-Sprites/" + enemy + "/";
-    
+        String    enemy    = getEnemyFolder(type);
+        String    basePath = "Enemy-Sprites/" + enemy + "/";
+        EnemyData data     = EnemyDataLoader.get(type);
+
         BufferedImage fb = SpriteLoader.loadWalkBaseFrame(
-            type.spriteWidth,
-            type.spriteHeight
+            data.spriteWidth,
+            data.spriteHeight
         );
-    
+
         BufferedImage[] walk = SpriteLoader.loadImages(
             basePath + "patrol", enemy + "_walk",
-            type.walkFrameCount, fb
+            data.walkFrameCount, fb
         );
-    
+
         BufferedImage[] idle = SpriteLoader.loadImages(
             basePath + "idle/", enemy + "_idle",
             10, fb
         );
-    
+
         BufferedImage[] attack = SpriteLoader.loadImages(
             basePath + "attack/", enemy + "_attack",
-            type.attackFrameCount, fb
+            data.attackFrameCount, fb
         );
-    
+
         BufferedImage[] hurt = SpriteLoader.loadImages(
             basePath + "hurt/", enemy + "_hurt",
             4, fb
         );
-    
+
         BufferedImage[] death = SpriteLoader.loadImages(
             basePath + "die/", enemy + "_die",
             7, fb
         );
-    
+
         return new EnemyFrameSet(walk, idle, attack, hurt, death);
     }
     

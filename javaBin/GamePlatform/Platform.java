@@ -20,13 +20,13 @@ public class Platform {
     static {
         try {
             metalImg = javax.imageio.ImageIO.read(
-                Platform.class.getResource("/Resources/Block-Assets/IronBlock_Assets.png")
+                new java.io.File("Resources/Block-Assets/IronBlock_Assets.png")
             );
             woodImg = javax.imageio.ImageIO.read(
-                Platform.class.getResource("/Resources/Block-Assets/GrassBlock_Assets.png")
+                new java.io.File("Resources/Block-Assets/GrassBlock_Assets.png")
             );
             sandImg = javax.imageio.ImageIO.read(
-                Platform.class.getResource("/Resources/Block-Assets/SandBlock02_Assets.png")
+                new java.io.File("Resources/Block-Assets/SandBlock02_Assets.png")
             );
         } catch (Exception e) {
             e.printStackTrace();

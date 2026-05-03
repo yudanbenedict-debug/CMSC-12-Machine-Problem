@@ -10,7 +10,7 @@ public class Game extends JFrame {
     private static final int    VIEWPORT_HEIGHT = 720;
     private static final String WINDOW_TITLE    = "Island Escaper - Engine Test";
 
-    public Game() {
+    public Game(boolean loadSave) {
         setTitle(WINDOW_TITLE);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setResizable(false);
@@ -23,6 +23,7 @@ public class Game extends JFrame {
             pack();
             setLocationRelativeTo(null);
             setVisible(true);
+            if (loadSave) panel.loadFromSave();
             panel.start();
         } catch (InvalidLevelDataException ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(),
@@ -33,7 +34,11 @@ public class Game extends JFrame {
 
 
     public static void launch() {
-        SwingUtilities.invokeLater(Game::new);
+        SwingUtilities.invokeLater(() -> new Game(false));
+    }
+
+    public static void launchWithSave() {
+        SwingUtilities.invokeLater(() -> new Game(true));
     }
 
     public static void main(String[] args) {

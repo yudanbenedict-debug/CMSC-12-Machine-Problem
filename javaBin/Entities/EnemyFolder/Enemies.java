@@ -4,6 +4,8 @@ import Animators.EnemyAnimator;
 import Animators.EnemyAnimator.SnapShot;
 import Entities.LivingEntity;
 import GamePlatform.Platform;
+import DataLoader.EnemyDataLoader;
+import DataLoader.EnemyDataLoader.EnemyData;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -46,6 +48,7 @@ public class Enemies extends LivingEntity {
 
     // ── Identity ──────────────────────────────────────────────────────────────
     private final EnemiesType type;
+    private final EnemyData   data;
     private final float       spawnX;
     private final float       maxHealth;
     private final Random      rng;
@@ -70,14 +73,19 @@ public class Enemies extends LivingEntity {
     // ─────────────────────────────────────────────────────────────────────────
 
     public Enemies(EnemiesType type, float x, float y) {
+        this(type, x, y, EnemyDataLoader.get(type));
+    }
+
+    private Enemies(EnemiesType type, float x, float y, EnemyData data) {
         super(x, y,
-              type.spriteWidth, type.spriteHeight,
-              type.baseHealth,  type.baseDamage,
-              type.baseSpeed,   type.baseSpeed);
+              data.spriteWidth, data.spriteHeight,
+              data.baseHealth,  data.baseDamage,
+              data.baseSpeed,   data.baseSpeed);
 
         this.type      = type;
+        this.data      = data;
         this.spawnX    = x;
-        this.maxHealth = type.baseHealth;
+        this.maxHealth = data.baseHealth;
         this.rng       = new Random((long)(type.ordinal() * 1_000_003L + (long)x * 31 + (long)y));
 
         this.alive          = true;
@@ -128,7 +136,7 @@ public class Enemies extends LivingEntity {
         switch (aiState) {
 
             case PATROL:
-                if (dist <= type.aggroRange) {
+                if (dist <= data.aggroRange) {
                     aiState   = AIState.CHASE;
                     idleTimer = 0;
                     break;
@@ -137,7 +145,7 @@ public class Enemies extends LivingEntity {
                 break;
 
             case CHASE:
-                if (dist > type.aggroRange * 1.3f) {
+                if (dist > data.aggroRange * 1.3f) {
                     aiState   = AIState.PATROL;
                     idleTimer = randIdle();
                     velX      = 0f;
@@ -156,7 +164,7 @@ public class Enemies extends LivingEntity {
                 velX = 0f;
                 if (attackCooldown <= 0) attackCooldown = ATK_CD;
                 if (dist > ATK_REACH + 10) {
-                    aiState = (dist <= type.aggroRange) ? AIState.CHASE : AIState.PATROL;
+                    aiState = (dist <= data.aggroRange) ? AIState.CHASE : AIState.PATROL;
                 }
                 break;
 
@@ -171,7 +179,7 @@ public class Enemies extends LivingEntity {
             velX = 0f;
             return;
         }
-        float half = type.patrolRange;
+        float half = data.patrolRange;
         if (cx < spawnX - half) {
             facingRight = true;
             velX        =  walk_speed;

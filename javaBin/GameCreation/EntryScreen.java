@@ -20,6 +20,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import Exceptions.ResourceLoadException;
+import Loaders.MusicPlayer;
+import DataLoader.SaveManager;
 
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -53,20 +55,33 @@ public class EntryScreen extends JFrame {
         menuPanel.add(Box.createVerticalStrut(80));
         menuPanel.add(titleLabel);
 
-        JButton playButton = new JButton("Play");
+        JButton playButton = new JButton("New Game");
         playButton.setFont(new Font("Arial", Font.BOLD, 20));
         playButton.setPreferredSize(new Dimension(200, 60));
         playButton.setMaximumSize(new Dimension(200, 60));
         playButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        playButton.addActionListener(e -> startGame());
+        playButton.addActionListener(e -> startGame(false));
         menuPanel.add(Box.createVerticalStrut(40));
         menuPanel.add(playButton);
+
+        // Only show Continue if a save exists
+        if (SaveManager.hasSave(1)) {
+            JButton continueButton = new JButton("Continue");
+            continueButton.setFont(new Font("Arial", Font.BOLD, 20));
+            continueButton.setPreferredSize(new Dimension(200, 60));
+            continueButton.setMaximumSize(new Dimension(200, 60));
+            continueButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+            continueButton.addActionListener(e -> startGame(true));
+            menuPanel.add(Box.createVerticalStrut(10));
+            menuPanel.add(continueButton);
+        }
+
         menuPanel.add(Box.createVerticalStrut(80));
 
         backgroundPanel.add(menuPanel);
     }
 
-    private void startGame() {
+    private void startGame(boolean loadSave) {
         backgroundPanel.stopScrolling();
     
         if (backgroundMusic != null) {
@@ -76,33 +91,17 @@ public class EntryScreen extends JFrame {
     
         dispose();
         JOptionPane.showMessageDialog(null, "Launching test level...");
-        Game.launch();
+        if (loadSave) {
+            Game.launchWithSave();
+        } else {
+            Game.launch();
+        }
     }
     
 
     private void playMusic() throws ResourceLoadException{
-        try {
-            File file = new File("Resources/Sounds/Newer-Days.wav");
-            //for debug (remove once fully implemented)
-            System.out.println("DEBUG path: " + file.getAbsolutePath());
-    
-            if (!file.exists()) {
-                System.out.println("Music file not found");
-                throw new ResourceLoadException("Invalid Shit");
-            }
-    
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(file);
-            backgroundMusic = AudioSystem.getClip();
-            backgroundMusic.open(audioStream);
-            backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
-            backgroundMusic.start();
-    
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        MusicPlayer.play("Resources/Sounds/Newer-Days.wav");
     }
-    
-    
     private static class ScrollingBackgroundPanel extends JPanel {
         private BufferedImage ocean;
         private int offset = 0;
@@ -119,75 +118,75 @@ public class EntryScreen extends JFrame {
         }
 
         
-      private void loadImage() {
-    try {
-    
-        URL url = getClass().getResource("/Ocean.png");
-        if (url != null) {
-            ocean = ImageIO.read(url);
-            return;
-        }
+    private void loadImage() {
+        try {
         
-        File file = new File("Resources/Ocean.png");
-        if (file.exists()) {
-            ocean = ImageIO.read(file);
-            return;
-        }
-        
-        file = new File("../Resources/Ocean.png");
-        if (file.exists()) {
-            ocean = ImageIO.read(file);
-            return;
-        }
-        
-        file = new File("Ocean.png");
-        if (file.exists()) {
-            ocean = ImageIO.read(file);
-            return;
-        }
-
-        throw new ResourceLoadException("Ocean.png");
-    } catch (Exception e) {
-        throw new ResourceLoadException("Ocean.png", e);
-    }
-}
-        private void startScrolling() {
-            if (ocean == null) return;
-            scrollTimer = new Timer(16, e -> {
-                offset -= scrollSpeed;
-                repaint();
-            });
-            scrollTimer.start();
-        }
-
-        public void stopScrolling() {
-            if (scrollTimer != null) scrollTimer.stop();
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            if (ocean == null) {
-                g.setColor(Color.DARK_GRAY);
-                g.fillRect(0, 0, getWidth(), getHeight());
-                g.setColor(Color.RED);
-                g.drawString("Ocean.png not loaded", 20, 50);
+            URL url = getClass().getResource("/Ocean.png");
+            if (url != null) {
+                ocean = ImageIO.read(url);
+                return;
+            }
+            
+            File file = new File("Resources/Ocean.png");
+            if (file.exists()) {
+                ocean = ImageIO.read(file);
+                return;
+            }
+            
+            file = new File("../Resources/Ocean.png");
+            if (file.exists()) {
+                ocean = ImageIO.read(file);
+                return;
+            }
+            
+            file = new File("Ocean.png");
+            if (file.exists()) {
+                ocean = ImageIO.read(file);
                 return;
             }
 
-            int panelWidth = getWidth();
-            int panelHeight = getHeight();
-            int imgWidth = ocean.getWidth();
-            if (imgWidth <= 0) return;
-
-            // Hrizontal Tilling this
-            int startX = offset % imgWidth;
-            if (startX > 0) startX -= imgWidth;
-
-            for (int x = startX; x < panelWidth; x += imgWidth) {
-                g.drawImage(ocean, x, 0, imgWidth, panelHeight, null);
-            }
+            throw new ResourceLoadException("Ocean.png");
+        } catch (Exception e) {
+            throw new ResourceLoadException("Ocean.png", e);
         }
+    }
+    private void startScrolling() {
+        if (ocean == null) return;
+        scrollTimer = new Timer(16, e -> {
+            offset -= scrollSpeed;
+            repaint();
+        });
+        scrollTimer.start();
+    }
+
+    public void stopScrolling() {
+        if (scrollTimer != null) scrollTimer.stop();
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (ocean == null) {
+            g.setColor(Color.DARK_GRAY);
+            g.fillRect(0, 0, getWidth(), getHeight());
+            g.setColor(Color.RED);
+            g.drawString("Ocean.png not loaded", 20, 50);
+            return;
+        }
+
+        int panelWidth = getWidth();
+        int panelHeight = getHeight();
+        int imgWidth = ocean.getWidth();
+        if (imgWidth <= 0) return;
+
+        // Hrizontal Tilling this
+        int startX = offset % imgWidth;
+        if (startX > 0) startX -= imgWidth;
+
+        for (int x = startX; x < panelWidth; x += imgWidth) {
+            g.drawImage(ocean, x, 0, imgWidth, panelHeight, null);
+        }
+     }
     }
 
     public static void main(String[] args) {

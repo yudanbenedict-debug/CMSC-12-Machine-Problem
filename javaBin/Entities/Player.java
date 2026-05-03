@@ -173,6 +173,9 @@ public class Player extends LivingEntity {
     public Gun getGun(){ return gun; }
     public Sword getSword(){return sword;}
     public int get_activeslots(){return slot;};
+    public void setHealth(float health){
+        this.health = health;
+    }
 
     public void setGrounded(boolean grounded) { this.isGrounded = grounded; }
 

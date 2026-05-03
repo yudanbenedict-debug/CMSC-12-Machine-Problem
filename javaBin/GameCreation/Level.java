@@ -6,6 +6,8 @@ import Exceptions.InvalidLevelDataException;
 import GamePlatform.Platform;
 import Handlers.CollisionHandler;
 import Handlers.EnemyManager;
+import DataLoader.LevelDataLoader;
+import DataLoader.PlayerSaveData;
 
 import java.awt.Rectangle;
 import java.util.Collections;
@@ -32,6 +34,8 @@ public class Level {
     private final CollisionHandler collisionHandler = new CollisionHandler();
 
     private int contactDamageCooldown = 0;
+    private String currentLevelFile = "level1.properties";
+    private int goldCount = 0;
 
     // ─────────────────────────────────────────────────────────────────────────
     //  Construction
@@ -52,7 +56,9 @@ public class Level {
         float spawnY = (viewportHeight * 0.5f) - 24.0f;
         this.player  = new Player(0.0f, 0.0f, spawnX, spawnY);
 
-        this.currentLevelData = LevelData.createStarterLevel(worldWidth, worldHeight);
+        // --------------------------------------------------
+        this.currentLevelData = LevelDataLoader.load("level1.properties", worldWidth, worldHeight);
+        // --------------------------------------------------
         this.futureLevels     = FutureLevelCatalog.loadFutureLevels();
 
         enemyManager.spawnEnemies(currentLevelData);
@@ -146,6 +152,40 @@ public class Level {
     public List<Rectangle> getItemZones() {
         return Collections.unmodifiableList(currentLevelData.getItems());
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  Save / Load
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** Packages current level + player state into a save snapshot. */
+    public PlayerSaveData buildSaveData() {
+        return new PlayerSaveData(
+            player.getHealth(),
+            0,              // score — expand later
+            goldCount,
+            player.get_activeslots(),
+            player.getX(),
+            player.getY(),
+            currentLevelFile
+        );
+    }
+
+    /** Restores player state from a save snapshot. */
+    public void loadFromSave(PlayerSaveData save) {
+        // Reload the level layout for the saved level
+        currentLevelFile  = save.currentLevel;
+        currentLevelData  = LevelDataLoader.load(currentLevelFile, worldWidth, worldHeight);
+        goldCount         = save.goldCount;
+
+        // Restore player position and health
+        player.respawn(save.x, save.y);
+        player.setHealth(save.health);
+
+        // Respawn enemies fresh for that level
+        enemyManager.spawnEnemies(currentLevelData);
+    }
+
+    public int getGoldCount() { return goldCount; }
 
     public int getWorldWidth() { return worldWidth; }
 }
