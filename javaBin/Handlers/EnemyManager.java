@@ -59,16 +59,6 @@ public class EnemyManager {
         for (Enemies e : enemies) {
             if (!e.isAlive() && !e.isDying()) continue;
             if (!player.getBounds().intersects(e.getBounds())) continue;
-
-            // ── Stomp check ───────────────────────────────────────────────────
-            // if (player.getVerticalVelocity() > 0) {
-            //     if (player.getY() + player.getHeight() <= e.getY() + 10) {
-            //         e.registerStomp();
-            //         player.setVerticalVelocity(-10);
-            //         continue;
-            //     }
-            // }
-
             // ── Contact / attack damage ───────────────────────────────────────
             float dmg = e.isReadyToAttack() ? e.getDamage() * 2f : e.getDamage();
             player.takeDamage(dmg);
