@@ -56,6 +56,9 @@ public class Player extends LivingEntity {
     private int jumpBufferFrames;
     private int coyoteFrames;
 
+    private boolean dead = false;
+    private Runnable onDeathCallback;
+
     public Player(float velX, float velY, float x, float y) {
         super(x, y, NORMAL_WIDTH, NORMAL_HEIGHT, 20.0f, 5.0f, 3.0f, 14.0f);
         this.velX = velX;
@@ -72,7 +75,7 @@ public class Player extends LivingEntity {
 
     
     public void jump() {
-        isJumping = true;
+        this.isJumping = true;
         jumpBufferFrames = JUMP_BUFFER_FRAMES;
     }
     public void sprint(){
@@ -85,7 +88,10 @@ public class Player extends LivingEntity {
     @Override
     public void update() {
         float currentSpeed;
-
+        if (dead) {
+            updateAnimation(); // still tick the death anim
+            return;
+        }
         if (sprinting) {
                 currentSpeed = walk_speed * SPRINT_MULTIPILIER;
         } else {
@@ -134,7 +140,7 @@ public class Player extends LivingEntity {
 
     private void updateAnimation() {
         //use the inner class snapshot
-        PlayerAnimator.StateSnapshot snapshot = new StateSnapshot(isGrounded, velX, velY, sprinting, attackAnimTimer, slot);
+        PlayerAnimator.StateSnapshot snapshot = new StateSnapshot(isGrounded, velX, velY, sprinting, attackAnimTimer, slot, dead);
         animations.update(snapshot);
      
     }
@@ -143,14 +149,6 @@ public class Player extends LivingEntity {
     public void draw(Graphics g) {
         animations.draw(g, (int) x, (int) y, (int) width, (int) height, facingRight);
     }
-    
-    // public int getHitboxOffsetY() {
-    //     return HITBOX_OFFSET_Y;
-    // }
-
-    // public int getHitboxHeight() {
-    //     return HITBOX_HEIGHT;
-    // }
 
     
     @Override
@@ -164,9 +162,6 @@ public class Player extends LivingEntity {
             (int) height
         );
     }
-
-
-
 
     public boolean isGrounded() { return isGrounded; }
 
@@ -220,7 +215,27 @@ public class Player extends LivingEntity {
     }
     //END OF VERY IMPORTANT STUFF;
     @Override
-    public void onDeath() { 
-        
+    public void onDeath() {
+        if (dead) return;
+        dead = true;
+        if (onDeathCallback != null) onDeathCallback.run();
     }
+ 
+    /** Resets player state for respawn. Level sets position after calling this. */
+    public void respawn(float spawnX, float spawnY) {
+        dead         = false;
+        health       = 20.0f;
+        x            = spawnX;
+        y            = spawnY;
+        velX         = 0;
+        velY         = 0;
+        isGrounded   = false;
+        attackAnimTimer = 0;
+    }
+
+    public void setOnDeathCallback(Runnable callback) {
+        this.onDeathCallback = callback;
+    }
+ 
+    public boolean isDead() { return dead; }
 }

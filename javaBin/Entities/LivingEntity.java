@@ -21,7 +21,7 @@ public abstract class LivingEntity extends Entity {
 
     //death
     public void die(){
-        //
+        onDeath();
     }
     //take damage.. add catcherss
     //add throiws herer

@@ -73,7 +73,7 @@ public class EnemyAnimator {
             return "death";
         }
         if (s.hitFlashTimer > 0) {
-            return "hurt";
+            return "damaged";
         }
         if (s.aiState == Enemies.AIState.ATTACK && s.attackCD > ATK_CD - 20) {
             return "attack";

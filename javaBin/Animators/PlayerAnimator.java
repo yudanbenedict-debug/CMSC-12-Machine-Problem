@@ -17,15 +17,25 @@ public class PlayerAnimator {
         public final boolean sprinting;
         public final int     attackAnimTimer;
         public final int     weaponSlot;      // 1 = gun, 2 = sword
+        // --------------------------------------------------
+        public final boolean isDead;
+        // --------------------------------------------------
 
         public StateSnapshot(boolean isGrounded, float velX, float velY,
-                             boolean sprinting, int attackAnimTimer, int weaponSlot) {
+                             boolean sprinting, int attackAnimTimer, int weaponSlot,
+                             // --------------------------------------------------
+                             boolean isDead
+                             // --------------------------------------------------
+                             ) {
             this.isGrounded      = isGrounded;
             this.velX            = velX;
             this.velY            = velY;
             this.sprinting       = sprinting;
             this.attackAnimTimer = attackAnimTimer;
             this.weaponSlot      = weaponSlot;
+            // --------------------------------------------------
+            this.isDead          = isDead;
+            // --------------------------------------------------
         }
     }
 
@@ -38,20 +48,12 @@ public class PlayerAnimator {
     private final int spriteWidth;
     private final int spriteHeight;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Construction
-    // ─────────────────────────────────────────────────────────────────────────
-
     public PlayerAnimator(int spriteWidth, int spriteHeight) {
         this.spriteWidth  = spriteWidth;
         this.spriteHeight = spriteHeight;
         loadAnimations();
         currentAnimation = animations.get("idle");
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Sprite loading  (mirrors what Player.initialize() used to do)
-    // ─────────────────────────────────────────────────────────────────────────
 
     private void loadAnimations() {
         BufferedImage sharedFrame = SpriteLoader.loadWalkBaseFrame(spriteWidth, spriteHeight);
@@ -63,6 +65,7 @@ public class PlayerAnimator {
         BufferedImage[] sprintFrames      = SpriteLoader.loadImages("Player-Sprites/Player-Run",         "player_run",   8, sharedFrame);
         BufferedImage[] swordAttackFrames = SpriteLoader.loadImages("Player-Sprites/Player-Sword-Attack","player_sword", 5, sharedFrame);
         BufferedImage[] shootFrames       = SpriteLoader.loadImages("Player-Sprites/Player-Gun_Attack",  "player_gun",   5, sharedFrame);
+        BufferedImage[] deathFrames = SpriteLoader.loadImages("Player-Sprites/Player-Die", "player_die", 11, sharedFrame);
         BufferedImage[] rollingFrames     = new BufferedImage[]{ sharedFrame };
 
         animations.put("idle",         new Animation(idleFrames,        6,                  true));
@@ -71,13 +74,12 @@ public class PlayerAnimator {
         animations.put("jump",         new Animation(jumpFrames,        4,                  true));
         animations.put("fall",         new Animation(fallFrames,        1,                  true));
         animations.put("rolling",      new Animation(rollingFrames,     8,                  true));
+        animations.put("death", new Animation(deathFrames, 10, true));
         animations.put("sword_attack", new Animation(swordAttackFrames, ATTACK_FRAME_TIME,  true));
         animations.put("shooting",     new Animation(shootFrames,       ATTACK_FRAME_TIME,  true));
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Update  (called once per tick by Player)
-    // ─────────────────────────────────────────────────────────────────────────
+
 
     public void update(StateSnapshot s) {
         String nextState = resolveState(s);
@@ -86,10 +88,13 @@ public class PlayerAnimator {
     }
 
     private String resolveState(StateSnapshot s) {
+        // --------------------------------------------------
+        if (s.isDead) return "death";
+        // --------------------------------------------------
         if (s.attackAnimTimer > 0) {
             return s.weaponSlot == 1 ? "shooting" : "sword_attack";
         }
-        // future: add "rolling", "hurt", "death" checks here before air checks
+        // future: add "rolling", "hurt" checks here before air checks
         if (!s.isGrounded) {
             return s.velY < 0 ? "jump" : "fall";
         }

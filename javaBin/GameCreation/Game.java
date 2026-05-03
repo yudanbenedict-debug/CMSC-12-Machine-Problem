@@ -16,7 +16,9 @@ public class Game extends JFrame {
         setResizable(false);
 
         try {
-            GamePanel panel = new GamePanel(VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+            GamePanel panel = new GamePanel(VIEWPORT_WIDTH, VIEWPORT_HEIGHT, () -> {
+                SwingUtilities.invokeLater(() -> new EntryScreen().setVisible(true));
+            });
             add(panel);
             pack();
             setLocationRelativeTo(null);

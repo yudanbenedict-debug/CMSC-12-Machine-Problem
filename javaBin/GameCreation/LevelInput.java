@@ -8,8 +8,9 @@ public class LevelInput {
     private final boolean attackPressed;
     private final int     weaponSlot;
     private final boolean reloadPressed;
+    private final boolean pausedPressed;
 
-    public LevelInput(boolean moveLeft, boolean moveRight, boolean jumpPressed, boolean sprintPressed, boolean attackPressed, int weaponSlot, boolean reloadPressed) {
+    public LevelInput(boolean moveLeft, boolean moveRight, boolean jumpPressed, boolean sprintPressed, boolean attackPressed, int weaponSlot, boolean reloadPressed, boolean pausedPressed) {
         this.sprintPressed = sprintPressed;
         this.moveLeft = moveLeft;
         this.moveRight = moveRight;
@@ -17,6 +18,7 @@ public class LevelInput {
         this.attackPressed = attackPressed;
         this.weaponSlot = weaponSlot;
         this.reloadPressed = reloadPressed;
+        this.pausedPressed = pausedPressed;
     }
 
     public boolean isMoveLeft() {
@@ -41,5 +43,8 @@ public class LevelInput {
     }
     public boolean isReloadPressed(){
         return reloadPressed;
+    }
+    public boolean isPausedPressed(){
+        return pausedPressed;
     }
 }
