@@ -33,7 +33,7 @@ public class Level {
     private final EnemyManager    enemyManager     = new EnemyManager();
     private final CollisionHandler collisionHandler = new CollisionHandler();
 
-    private int contactDamageCooldown = 0;
+    private int contactDamageCooldown = 10;
     private String currentLevelFile = "level1.properties";
     private int goldCount = 0;
 

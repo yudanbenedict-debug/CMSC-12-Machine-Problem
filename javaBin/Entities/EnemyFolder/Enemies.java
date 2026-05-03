@@ -43,7 +43,7 @@ public class Enemies extends LivingEntity {
     private static final int MIN_IDLE  = 40;
     private static final int MAX_IDLE  = 120;
     private static final int ATK_CD    = 50;
-    private static final int ATK_REACH = 55;
+    private static final int ATK_REACH = 30;
     private static final int HIT_FLASH = 12;
 
     // ── Identity ──────────────────────────────────────────────────────────────

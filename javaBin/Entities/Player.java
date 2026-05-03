@@ -204,7 +204,7 @@ public class Player extends LivingEntity {
     public void tryAttack(){
         Rectangle atk_rect = getBounds();
         boolean fired;
-        float hx = atk_rect.x, hy = atk_rect.y, hw = atk_rect.width, hh = atk_rect.height;
+        float hx = atk_rect.x - 50 /*offset */, hy = atk_rect.y, hw = atk_rect.width, hh = atk_rect.height;
         if(slot == 1){
             fired = gun.tryAttack(hx, hy, hw, hh, facingRight);
         }

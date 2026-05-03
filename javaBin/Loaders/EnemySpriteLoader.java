@@ -59,10 +59,20 @@ public class EnemySpriteLoader {
         };
     }
     
+    private static String getAttackFolder(EnemiesType type) {
+        return switch (type) {
+            case GUN_ENEMY   -> "gun";
+            case SWORD_ENEMY -> "sword";
+            case PUNCH_ENEMY -> "punch";
+            case KICK_ENEMY  -> "kick";
+        };
+    }
+
     private static EnemyFrameSet load(EnemiesType type) {
-        String    enemy    = getEnemyFolder(type);
-        String    basePath = "Enemy-Sprites/" + enemy + "/";
-        EnemyData data     = EnemyDataLoader.get(type);
+        String    enemy      = getEnemyFolder(type);
+        String    basePath   = "Resources/Enemy-Sprites/" + enemy + "/";
+        String    attackType = getAttackFolder(type);
+        EnemyData data       = EnemyDataLoader.get(type);
 
         BufferedImage fb = SpriteLoader.loadWalkBaseFrame(
             data.spriteWidth,
@@ -70,27 +80,27 @@ public class EnemySpriteLoader {
         );
 
         BufferedImage[] walk = SpriteLoader.loadImages(
-            basePath + "patrol", enemy + "_walk",
+            basePath + "patrol", enemy + "_patrol",
             data.walkFrameCount, fb
         );
 
         BufferedImage[] idle = SpriteLoader.loadImages(
-            basePath + "idle/", enemy + "_idle",
-            10, fb
+            basePath + "patrol", enemy + "_patrol",
+            data.walkFrameCount, fb
         );
 
         BufferedImage[] attack = SpriteLoader.loadImages(
-            basePath + "attack/", enemy + "_attack",
+            basePath + attackType, enemy + "_" + attackType,
             data.attackFrameCount, fb
         );
 
         BufferedImage[] hurt = SpriteLoader.loadImages(
-            basePath + "hurt/", enemy + "_hurt",
+            basePath + "hurt", enemy + "_hurt",
             4, fb
         );
 
         BufferedImage[] death = SpriteLoader.loadImages(
-            basePath + "die/", enemy + "_die",
+            basePath + "die", enemy + "_die",
             7, fb
         );
 
