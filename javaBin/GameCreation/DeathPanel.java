@@ -31,9 +31,9 @@ public class DeathPanel extends JPanel {
      * panel is shown — can update them after construction. A local variable
      * would be unreachable outside the constructor.
      */
+
     private final JButton loadSaveBtn;
     private final JLabel  noSaveLabel;
-    /*/----- END CHANGE -----/*/
 
     public DeathPanel(GamePanel gamePanel) {
         setOpaque(false);
@@ -45,24 +45,11 @@ public class DeathPanel extends JPanel {
         box.setLayout(new GridLayout(3, 1, 10, 12));
         box.setPreferredSize(new Dimension(240, 150));
 
-        /*/----- CHANGE: added "YOU DIED" title label -----/
-         * PURPOSE: Previously the panel had no title — the player had no
-         * visual confirmation of what happened. This label makes the death
-         * state immediately clear and gives the screen a proper header.
-         */
+        
         JLabel titleLabel = new JLabel("YOU DIED", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 22));
         titleLabel.setForeground(Color.WHITE);
-        /*/----- END CHANGE -----/*/
-
-        /*/----- CHANGE: "Respawn" button renamed to "Load Last Save", wired to loadSaveOrMenu() -----/
-         * PURPOSE: The old button called gamePanel.respawnPlayer(), which put
-         * the player back in the center of the viewport with full health but
-         * no actual save data — making the save system pointless. The new
-         * button calls gamePanel.loadSaveOrMenu(), which either restores the
-         * last real save or falls back to the main menu if no save exists.
-         * This gives death actual consequence and makes saving meaningful.
-         */
+       
         loadSaveBtn = new JButton("Load Last Save");
         JButton menuBtn = new JButton("Main Menu");
 
@@ -71,21 +58,11 @@ public class DeathPanel extends JPanel {
 
         loadSaveBtn.addActionListener(e -> gamePanel.loadSaveOrMenu());
         menuBtn.addActionListener(e -> gamePanel.returnToMenu());
-        /*/----- END CHANGE -----/*/
-
-        /*/----- CHANGE: added noSaveLabel -----/
-         * PURPOSE: When the player dies before ever saving, the "Load Last
-         * Save" button is disabled (see refresh() below). Without any
-         * explanation the player would just see a greyed-out button and not
-         * know why. This label appears in its place to communicate that no
-         * save file was found, so the player understands they must go to the
-         * main menu instead.
-         */
+   
         noSaveLabel = new JLabel("No save file found.", SwingConstants.CENTER);
         noSaveLabel.setFont(new Font("Arial", Font.ITALIC, 12));
         noSaveLabel.setForeground(new Color(255, 180, 180));
         noSaveLabel.setVisible(false); // hidden by default; refresh() toggles it
-        /*/----- END CHANGE -----/*/
 
         box.add(loadSaveBtn);
         box.add(noSaveLabel);
@@ -99,27 +76,17 @@ public class DeathPanel extends JPanel {
 
         add(column);
     }
-
-    /*/----- CHANGE: added refresh() method -----/
-     * PURPOSE: The save file may or may not exist at the moment the player
-     * dies. Checking at construction time would be wrong because the panel
-     * is built once at game start, not on every death. refresh() is called
-     * by GamePanel right before setVisible(true) so the button and label
-     * always reflect the actual current state of the save slot.
-     *
-     * USAGE: GamePanel.updateGame() calls deathPanel.refresh() inside the
-     * SwingUtilities.invokeLater block that shows the panel.
-     */
+ 
     public void refresh() {
         boolean hasSave = SaveManager.hasSave(1);
         loadSaveBtn.setEnabled(hasSave);   // grey out button if no save
         noSaveLabel.setVisible(!hasSave);  // show warning label instead
     }
-    /*/----- END CHANGE -----/*/
 
     @Override
     protected void paintComponent(Graphics g) {
         Graphics2D g2 = (Graphics2D) g.create();
+        //red color. bit transparent
         g2.setColor(new Color(180, 0, 0, 140));
         g2.fillRect(0, 0, getWidth(), getHeight());
         g2.dispose();

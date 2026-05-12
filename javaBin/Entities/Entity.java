@@ -17,7 +17,7 @@ public abstract class Entity {
         this.height = height;
         // sprite can stay null until set in subclasses
     }
-
+    
     public abstract void update();
     public abstract void draw(Graphics g);
 

@@ -7,25 +7,11 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-/**
- * Handles writing and reading PlayerSaveData to/from .dat files.
- *
- * Save path: javaBin/saves/save{slot}.dat
- * e.g.       javaBin/saves/save1.dat
- */
+//read/write .dat files for player/enemy save
 public class SaveManager {
 
     private static final String SAVE_DIR = "Resources/Data/Saves/";
-
-    // ── Save ──────────────────────────────────────────────────────────────────
-
-    /**
-     * Writes the save data to disk.
-     *
-     * @param data the player state to save
-     * @param slot save slot number (1, 2, 3...)
-     * @return true if saved successfully
-     */
+    //save slot
     public static boolean save(PlayerSaveData data, int slot) {
         File dir = new File(SAVE_DIR);
         if (!dir.exists()) dir.mkdirs();  // create saves/ folder if missing
@@ -41,14 +27,7 @@ public class SaveManager {
         }
     }
 
-    // ── Load ──────────────────────────────────────────────────────────────────
-
-    /**
-     * Reads save data from disk.
-     *
-     * @param slot save slot number
-     * @return the loaded PlayerSaveData, or null if no save exists or load failed
-     */
+   //load slot
     public static PlayerSaveData load(int slot) {
         File file = saveFile(slot);
 
@@ -67,14 +46,7 @@ public class SaveManager {
         }
     }
 
-    // ── Delete ────────────────────────────────────────────────────────────────
-
-    /**
-     * Deletes a save slot.
-     *
-     * @param slot save slot number
-     * @return true if deleted successfully
-     */
+    //delete slot
     public static boolean deleteSave(int slot) {
         File file = saveFile(slot);
         if (file.exists()) {
@@ -85,9 +57,7 @@ public class SaveManager {
         return false;
     }
 
-    // ── Utility ───────────────────────────────────────────────────────────────
-
-    /** Returns true if a save file exists for the given slot. */
+    //utility and debugging
     public static boolean hasSave(int slot) {
         return saveFile(slot).exists();
     }

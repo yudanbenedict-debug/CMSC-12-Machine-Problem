@@ -10,14 +10,12 @@ public class CollisionHandler {
 
     private static final float FLOOR_SNAP_TOLERANCE = 4.0f;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Player-platform collision
-    // ─────────────────────────────────────────────────────────────────────────
 
     public void handlePlayerPlatformCollisions(Player player, List<Platform> platforms,
                                                float previousX, float previousY) {
         player.setGrounded(false);
 
+        //calculate col based on the previous frame not the current one
         float previousBottom = previousY + player.getHeight();
         float previousTop    = previousY;
         float previousRight  = previousX + player.getWidth();

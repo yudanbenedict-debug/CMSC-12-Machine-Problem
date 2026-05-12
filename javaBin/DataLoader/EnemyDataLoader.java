@@ -9,17 +9,11 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Properties;
 
-/**
- * Loads enemy stat data from .properties files at runtime.
- * Replaces the hardcoded values in EnemiesType enum fields.
- *
- * Expected path: Resources/data/enemies/{type_lc}.properties
- * e.g. Resources/data/enemies/gun_enemy.properties
- */
 public class EnemyDataLoader {
 
-    // ── Loaded data bundle ────────────────────────────────────────────────────
+    
     public static class EnemyData {
+        //enemy data from properties
         public final float baseHealth;
         public final float baseDamage;
         public final float baseSpeed;
@@ -56,21 +50,13 @@ public class EnemyDataLoader {
 
     private static final String BASE_PATH = "Resources/Data/Enemies/";
 
-    // ── Cache — loaded once per session ──────────────────────────────────────
-    private static final Map<EnemiesType, EnemyData> cache =
-            new EnumMap<>(EnemiesType.class);
+   //no more reading after loading a type of an enemy
+    private static final Map<EnemiesType, EnemyData> cache = new EnumMap<>(EnemiesType.class);
 
-    // ── Public accessor ───────────────────────────────────────────────────────
-
-    /**
-     * Returns the EnemyData for the given type, loading from disk if needed.
-     * Falls back to hardcoded defaults if the file is missing.
-     */
     public static EnemyData get(EnemiesType type) {
         return cache.computeIfAbsent(type, EnemyDataLoader::load);
     }
 
-    // ── Internal loader ───────────────────────────────────────────────────────
 
     private static EnemyData load(EnemiesType type) {
         String fileName = type.name().toLowerCase() + ".properties";
@@ -116,6 +102,6 @@ public class EnemyDataLoader {
             8, 8, 1, 5, 10
         );
     }
-
+    //so it can't be called / referenced
     private EnemyDataLoader() {}
 }

@@ -8,8 +8,11 @@ import java.awt.Graphics;
 import java.awt.Rectangle;
 
 public class Player extends LivingEntity {
+    //tick per frames
     private static final int ATTACK_ANIMATION_FRAMETIMES = 4;
+    //number of frames
     private static final int ATTACK_ANIMATION_FRAMES = 5;
+    //total frame duration
     private static final int ATTACK_ANIM_DURATION = ATTACK_ANIMATION_FRAMES * ATTACK_ANIMATION_FRAMETIMES;
 
     private static final int NORMAL_WIDTH = 32;

@@ -36,9 +36,10 @@ public class EntryScreen extends JFrame {
                 exitGame();
             }
         });
-        setSize(800, 600); // Matches with test java frame size
+        setSize(800, 600); 
         setLocationRelativeTo(null);
 
+        //initialize the gui
         backgroundPanel = new ScrollingBackgroundPanel();
         setContentPane(backgroundPanel);
         backgroundPanel.setLayout(new GridBagLayout());
@@ -134,7 +135,7 @@ public class EntryScreen extends JFrame {
             startScrolling();
         }
 
-        
+    //load image separately here instead of the sprite loader
     private void loadImage() {
         try {
             File file = new File("Resources/Ocean.png");
@@ -177,7 +178,7 @@ public class EntryScreen extends JFrame {
         int imgWidth = ocean.getWidth();
         if (imgWidth <= 0) return;
 
-        // Hrizontal Tilling this
+        // scrolling background
         int startX = offset % imgWidth;
         if (startX > 0) startX -= imgWidth;
 

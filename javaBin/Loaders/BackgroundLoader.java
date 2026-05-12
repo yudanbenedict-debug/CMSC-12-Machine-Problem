@@ -7,15 +7,6 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.imageio.ImageIO;
 
-/**
- * Loads and caches background images from Resources/Backgrounds/.
- *
- * Usage:
- *   BufferedImage bg = BackgroundLoader.get("Jungle.png");
- *
- * Returns null if the file is missing or unreadable — callers should
- * fall back to a solid color in that case.
- */
 public class BackgroundLoader {
 
     private static final String BASE_PATH = "Resources/Backgrounds/";

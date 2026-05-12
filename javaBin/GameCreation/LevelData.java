@@ -32,14 +32,9 @@ public class LevelData {
     private final String    nextLevelFile; // null = final level
     private final Rectangle exitZone;
 
-    /*/----- CHANGE: added backgroundImage field -----/
-     * PURPOSE: Each level now declares which background image to use via the
-     * "background" key in its .properties file (e.g. background=Jungle.png).
-     * The value is the filename inside Resources/Backgrounds/. null means no
-     * image was specified and GamePanel falls back to its default colour.
-     */
+   
     private final String backgroundImage; // filename in Resources/Backgrounds/, or null
-    /*/----- END CHANGE -----/*/
+ 
 
     // Backwards-compatible constructor — no background image
     public LevelData(ArrayList<Platform>   platforms,
@@ -51,11 +46,7 @@ public class LevelData {
         this(platforms, enemies, items, minScore, nextLevelFile, exitZone, null);
     }
 
-    /*/----- CHANGE: full constructor now accepts backgroundImage -----/
-     * PURPOSE: LevelDataLoader passes the parsed "background" property here.
-     * The overload above delegates with null so createStarterLevel() and any
-     * other existing callers compile without changes.
-     */
+   // 2nd constructor with background image
     public LevelData(ArrayList<Platform>   platforms,
                      ArrayList<EnemySpawn> enemies,
                      ArrayList<Item>       items,
@@ -71,7 +62,6 @@ public class LevelData {
         this.exitZone        = exitZone;
         this.backgroundImage = backgroundImage;
     }
-    /*/----- END CHANGE -----/*/
 
     // ── Starter level factory ─────────────────────────────────────────────────
     public static LevelData createStarterLevel(int worldWidth, int worldHeight) {
@@ -108,27 +98,21 @@ public class LevelData {
         items.add(new Item(Item.Type.COIN, 2100, worldHeight - 220, 20, 20));
         items.add(new Item(Item.Type.COIN, 3200, worldHeight - 220, 20, 20));
 
-        /*/----- CHANGE: added exit zone and level gate for starter level -----/
-         * PURPOSE: The exit is a tall green zone at the far right edge of the
-         * map. minScore of 10 means the player needs at least 3 kills + 1 coin
-         * or any combination reaching 10 before the gate opens. nextLevelFile
-         * points to level2.properties which must exist in Resources/Data/Level/.
-         */
+        //point where player can progress to the next level
         Rectangle exitZone = new Rectangle(worldWidth - 60, 0, 60, worldHeight);
+        //property goes to level2 for now.
         return new LevelData(platforms, enemies, items, 10, "level2.properties", exitZone, "Jungle.png");
-        /*/----- END CHANGE -----/*/
+      
     }
 
-    // ── Getters ───────────────────────────────────────────────────────────────
+
     public List<Platform>   getPlatforms()       { return platforms;       }
     public List<EnemySpawn> getEnemies()         { return enemies;         }
     public List<Item>       getItems()           { return items;           }
     public int              getMinScore()        { return minScore;        }
     public String           getNextLevel()       { return nextLevelFile;   }
     public Rectangle        getExitZone()        { return exitZone;        }
-    /*/----- CHANGE: added getBackgroundImage() getter -----/
-     * PURPOSE: GamePanel calls this to find out which image to draw behind the level.
-     */
+   
     public String           getBackgroundImage() { return backgroundImage; }
-    /*/----- END CHANGE -----/*/
+
 }

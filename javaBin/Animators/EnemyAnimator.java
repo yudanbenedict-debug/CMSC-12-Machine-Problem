@@ -79,19 +79,7 @@ public class EnemyAnimator {
         return "idle";
     }
 
-    //draw
-
-     /**
-     * Draws the current frame with horizontal flip and hit-flash overlay.
-     *
-     * @param g            Graphics context already translated by -cameraX
-     * @param x            enemy world X
-     * @param y            enemy world Y
-     * @param width        sprite draw width
-     * @param height       sprite draw height
-     * @param facingRight  whether the enemy faces right
-     * @param hitFlashTimer ticks remaining on the hurt flash (0 = no flash)
-     */
+    //draw the sprite after loading animation
     public void draw(Graphics g, int x, int y, int width, int height, boolean facingRight, int hitFlashTimer) {
         if (currAnim == null) return;
         BufferedImage frame = currAnim.getCurrentFrame();

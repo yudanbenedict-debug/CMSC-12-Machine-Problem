@@ -53,7 +53,7 @@ public class InputHandler {
         bindKey(im, am, "pressed UP",     "jump-up-pressed",     false, false, true);
         bindKey(im, am, "released UP",    "jump-up-released",    false, false, false);
  
-        // ── Sprint (P for debug, swap to SHIFT when ready) ───────────────────
+        // ── Sprint (P)
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_P, 0, false), "sprint-pressed");
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_P, 0, true),  "sprint-released");
         am.put("sprint-pressed",  new AbstractAction() {

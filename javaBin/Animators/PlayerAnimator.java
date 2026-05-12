@@ -17,15 +17,14 @@ public class PlayerAnimator {
         public final boolean sprinting;
         public final int     attackAnimTimer;
         public final int     weaponSlot;      // 1 = gun, 2 = sword
-        // --------------------------------------------------
+      
         public final boolean isDead;
-        // --------------------------------------------------
 
         public StateSnapshot(boolean isGrounded, float velX, float velY,
                              boolean sprinting, int attackAnimTimer, int weaponSlot,
-                             // --------------------------------------------------
+                         
                              boolean isDead
-                             // --------------------------------------------------
+                       
                              ) {
             this.isGrounded      = isGrounded;
             this.velX            = velX;
@@ -33,9 +32,8 @@ public class PlayerAnimator {
             this.sprinting       = sprinting;
             this.attackAnimTimer = attackAnimTimer;
             this.weaponSlot      = weaponSlot;
-            // --------------------------------------------------
+
             this.isDead          = isDead;
-            // --------------------------------------------------
         }
     }
 
@@ -88,9 +86,9 @@ public class PlayerAnimator {
     }
 
     private String resolveState(StateSnapshot s) {
-        // --------------------------------------------------
+
         if (s.isDead) return "death";
-        // --------------------------------------------------
+     
         if (s.attackAnimTimer > 0) {
             return s.weaponSlot == 1 ? "shooting" : "sword_attack";
         }
@@ -115,21 +113,7 @@ public class PlayerAnimator {
         currentAnimation = next;
         currentState     = key;
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Draw  (called by Player.draw())
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Draws the current animation frame.
-     *
-     * @param g           Graphics context already translated by -cameraX
-     * @param x           player world X
-     * @param y           player world Y
-     * @param width       draw width  (pass negative value or handle flip externally)
-     * @param height      draw height
-     * @param facingRight whether the player is facing right
-     */
+    //draw player sprite after loading animation
     public void draw(Graphics g, int x, int y, int width, int height, boolean facingRight) {
         if (currentAnimation == null) return;
         BufferedImage frame = currentAnimation.getCurrentFrame();

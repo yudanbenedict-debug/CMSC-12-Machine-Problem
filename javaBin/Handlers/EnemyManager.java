@@ -12,8 +12,10 @@ import Weapons.Sword;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 public class EnemyManager {
 
@@ -21,37 +23,15 @@ public class EnemyManager {
 
     private final List<Enemies> enemies = new ArrayList<>();
 
-    /*/----- CHANGE: added hitThisSwing set to fix sword multi-hit bug -----/
-     * PURPOSE: The sword hitbox lives for ACTIVE_FRAMES (3) ticks. Without
-     * tracking which enemies were already hit, every alive enemy inside the
-     * hitbox takes damage once per tick for the full duration of the swing —
-     * up to 3x the intended damage per swing. hitThisSwing records which
-     * enemies have already been damaged in the current swing. It is cleared
-     * when the hitbox disappears (getAttackHitBox() returns null) so the set
-     * is always fresh at the start of the next swing.
-     */
-    private final java.util.Set<Enemies> hitThisSwing = new java.util.HashSet<>();
-    /*/----- END CHANGE -----/*/
-
-    /*/----- CHANGE: added onEnemyKilled callback -----/
-     * PURPOSE: EnemyManager needs to notify Level when an enemy dies so
-     * Level can increment the score by 3. A Runnable callback keeps
-     * EnemyManager decoupled from Level — it doesn't import or reference
-     * Level at all, it just fires a hook that Level wires up.
-     * setOnEnemyKilled() is called in the Level constructor and again after
-     * loadFromSave() since loadEnemies() creates fresh instances.
-     */
+    
+    private final Set<Enemies> hitThisSwing = new HashSet<>();
+    
     private Runnable onEnemyKilled = () -> {}; // no-op default
 
     public void setOnEnemyKilled(Runnable callback) {
         this.onEnemyKilled = callback;
     }
-    /*/----- END CHANGE -----/*/
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Spawning
-    // ─────────────────────────────────────────────────────────────────────────
-
+    
     public void spawnEnemies(LevelData levelData) {
         enemies.clear();
         for (LevelData.EnemySpawn spawn : levelData.getEnemies()) {
@@ -59,28 +39,7 @@ public class EnemyManager {
         }
     }
 
-    /*/----- CHANGE: added loadEnemies() method -----/
-     * PURPOSE: spawnEnemies() always creates enemies at the coordinates
-     * defined in the level file, which is correct for a fresh game start but
-     * wrong for a load — it caused every enemy to teleport back to its
-     * original spawn point regardless of where it actually was when the
-     * player saved.
-     *
-     * loadEnemies() replaces spawnEnemies() during a load. Instead of
-     * reading coordinates from the level file, it reads them from the
-     * EnemySnapshot list stored in the save data. For each snapshot:
-     *   - If alive == true : create the enemy at the saved x/y with saved
-     *     health, preserving where it was in the world at save time.
-     *   - If alive == false: skip it entirely — dead enemies stay dead and
-     *     are not added to the live list at all.
-     *
-     * Enemies are matched back to their type via snapshot.type rather than
-     * snapshot.spawnIndex because type is sufficient to reconstruct the
-     * enemy — the index is kept in the snapshot for potential future use
-     * (e.g. tracking which specific spawn slot was cleared).
-     *
-     * USAGE: Called by Level.loadFromSave() instead of spawnEnemies().
-     */
+   
     public void loadEnemies(List<EnemySnapshot> snapshots) {
         enemies.clear();
         for (EnemySnapshot snap : snapshots) {
@@ -90,27 +49,7 @@ public class EnemyManager {
             enemies.add(e);
         }
     }
-    /*/----- END CHANGE -----/*/
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Snapshot builder  (called by Level.buildSaveData)
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /*/----- CHANGE: added buildSnapshots() method -----/
-     * PURPOSE: Level.buildSaveData() needs to package the current enemy
-     * state into the save file. buildSnapshots() iterates the live enemy
-     * list and converts each Enemies instance into an EnemySnapshot,
-     * recording its spawn index, type, current world position, health,
-     * and alive status.
-     *
-     * Only enemies still in the live list are included — enemies that
-     * finished their death animation are already removed by update(), so
-     * they naturally don't appear in the snapshot and won't be recreated
-     * on load.
-     *
-     * USAGE: Called by Level.buildSaveData() to populate
-     * PlayerSaveData.enemies.
-     */
     public List<EnemySnapshot> buildSnapshots() {
         List<EnemySnapshot> snapshots = new ArrayList<>();
         for (int i = 0; i < enemies.size(); i++) {
@@ -126,12 +65,7 @@ public class EnemyManager {
         }
         return snapshots;
     }
-    /*/----- END CHANGE -----/*/
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Update + removal
-    // ─────────────────────────────────────────────────────────────────────────
-
+  
     public void update(List<Platform> platforms, Player player) {
         float px = player.getX() + player.getWidth()  / 2f;
         float py = player.getY() + player.getHeight() / 2f;
@@ -143,22 +77,12 @@ public class EnemyManager {
             if (e.isDeathAnimationFinished()) {
                 e.onDeath();
                 it.remove();
-                /*/----- CHANGE: fire kill callback for +3 score -----/
-                 * PURPOSE: This is the single point where an enemy is
-                 * confirmed dead and removed from the live list. Firing
-                 * onEnemyKilled here (after removal) ensures the callback
-                 * triggers exactly once per kill and only when the death
-                 * animation has fully played — not on first hit.
-                 */
+                
                 onEnemyKilled.run();
-                /*/----- END CHANGE -----/*/
+                
             }
         }
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Enemy-player interaction
-    // ─────────────────────────────────────────────────────────────────────────
 
     public int handleEnemyPlayerInteraction(Player player, int contactDamageCooldown) {
         if (contactDamageCooldown > 0) return contactDamageCooldown;
@@ -174,9 +98,7 @@ public class EnemyManager {
         return contactDamageCooldown;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Weapon hits
-    // ─────────────────────────────────────────────────────────────────────────
+
 
     public void handleWeaponHits(Player player, List<Platform> platforms) {
         Gun   gun   = player.getGun();
@@ -202,15 +124,7 @@ public class EnemyManager {
             }
         }
 
-        /*/----- CHANGE: sword now hits each enemy at most once per swing -----/
-         * PURPOSE: Previously the sword hitbox was checked every tick for its
-         * full ACTIVE_FRAMES lifetime, so an enemy inside the arc took damage
-         * on each of those ticks — up to 3x the intended damage. Now we check
-         * hitThisSwing before applying damage and add the enemy to the set so
-         * it can't be hit again in the same swing. When the hitbox disappears
-         * (getAttackHitBox() returns null) we clear the set so it's clean for
-         * the next swing.
-         */
+       
         java.awt.Rectangle swHb = sword.getAttackHitBox();
         if (swHb != null) {
             for (Enemies e : enemies) {
@@ -222,15 +136,11 @@ public class EnemyManager {
                 }
             }
         } else {
-            hitThisSwing.clear(); // swing ended — reset for next attack
+            hitThisSwing.clear(); 
         }
-        /*/----- END CHANGE -----/*/
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Getter
-    // ─────────────────────────────────────────────────────────────────────────
-
+    
     public List<Enemies> getEnemies() {
         return Collections.unmodifiableList(enemies);
     }

@@ -7,9 +7,7 @@ public class Animation {
     private int frame_counter;
     private boolean running;
     private int currentFrame;
-    // --------------------------------------------------
     private boolean hasPlayedThrough;
-    // --------------------------------------------------
 
     public Animation(BufferedImage[] frames, int frame_time, boolean running){
         this.frames = frames;
@@ -26,9 +24,8 @@ public class Animation {
         if (frame_counter >= frame_time){
             frame_counter = 0;
             currentFrame = (currentFrame + 1) % frames.length;
-            // --------------------------------------------------
+
             if (currentFrame == 0) hasPlayedThrough = true;
-            // --------------------------------------------------
         }
         if(!running && currentFrame == 0){
             currentFrame = frames.length - 1;
@@ -38,16 +35,16 @@ public class Animation {
     public void resetanimation(){
         currentFrame = 0;
         frame_counter = 0;
-        // --------------------------------------------------
+
         hasPlayedThrough = false;
-        // --------------------------------------------------
+
     }
 
-    // --------------------------------------------------
+
     public boolean isFinished(){
         return hasPlayedThrough;
     }
-    // --------------------------------------------------
+
 
     public BufferedImage getCurrentFrame(){
         return frames[currentFrame];

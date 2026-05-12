@@ -3,10 +3,6 @@ package Loaders;
 import javax.sound.sampled.*;
 import java.io.File;
 
-/**
- * Simple singleton-style music player.
- * Only one track plays at a time — calling play() stops any current track first.
- */
 public class MusicPlayer {
 
     private static Clip currentClip;

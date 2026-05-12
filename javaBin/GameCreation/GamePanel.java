@@ -26,7 +26,7 @@ import javax.swing.SwingUtilities;
 
 public class GamePanel extends JPanel implements Runnable {
     private static final int    TARGET_FPS       = 60;
-    private static final double NANOS_PER_UPDATE = 1_000_000_000.0 / TARGET_FPS;
+    private static final double NANOS_PER_UPDATE = 1_000_000_000.0 / TARGET_FPS; //about 16.67 millis ~ 60fps
     private static final int DEATH_DISPLAY_DELAY = 10;
 
     private final Level        level;
@@ -47,13 +47,8 @@ public class GamePanel extends JPanel implements Runnable {
         this.onReturnToMenu = onReturnToMenu;
 
         setPreferredSize(new Dimension(viewportWidth, viewportHeight));
-        /*/----- CHANGE: removed setBackground(solid blue) -----/
-         * PURPOSE: The background is now drawn as an image in drawLevel().
-         * Keeping a solid colour here would only show through if the image
-         * fails to load — we set black as a neutral fallback instead.
-         */
         setBackground(Color.BLACK);
-        /*/----- END CHANGE -----/*/
+
         setFocusable(true);
         setDoubleBuffered(true);
         setLayout(null);
@@ -63,31 +58,23 @@ public class GamePanel extends JPanel implements Runnable {
         pauseMenu.setVisible(false);
         add(pauseMenu);
 
-        // --------------------------------------------------
+       
         deathPanel = new DeathPanel(this);
         deathPanel.setBounds(0, 0, viewportWidth, viewportHeight);
         deathPanel.setVisible(false);
         add(deathPanel);
-        // --------------------------------------------------
+     
 
         level        = new Level(viewportWidth, viewportHeight);
         inputHandler = new InputHandler(this);
 
-        // --------------------------------------------------
         // re-wire death callback
         level.getPlayer().setOnDeathCallback(() -> {
-            playerDead      = true;
+            playerDead = true;
             deathDelayTimer = DEATH_DISPLAY_DELAY;
         });
 
-        /*/----- CHANGE: wire level complete callback -----/
-         * PURPOSE: Level fires onLevelComplete when the player reaches the
-         * exit with enough score. GamePanel handles it here: if a next level
-         * exists, loadNextLevel() is called and the game continues seamlessly
-         * with score carried over. If nextLevel is null it's the final level
-         * and returnToMenu() is called as a temporary placeholder — a proper
-         * "You Win" screen can replace this later.
-         */
+        
         level.setOnLevelComplete(() -> {
             if (level.getNextLevel() != null) {
                 level.loadNextLevel();
@@ -97,17 +84,16 @@ public class GamePanel extends JPanel implements Runnable {
                     deathDelayTimer = DEATH_DISPLAY_DELAY;
                 });
             } else {
-                // TODO: show a proper "You Win" screen
+                // add a "you win screen"
                 returnToMenu();
             }
         });
-        /*/----- END CHANGE -----/*/
     }
 
     public void start() {
         if (running) return;
         running    = true;
-        gameThread = new Thread(this, "engine-test-loop");
+        gameThread = new Thread(this, "Island Escaper!");
         gameThread.start();
         MusicPlayer.play("Resources/Sounds/gameplay.wav");
         SwingUtilities.invokeLater(this::requestFocusInWindow);
@@ -126,10 +112,6 @@ public class GamePanel extends JPanel implements Runnable {
         });
     }
 
-    /**
-     * Shows a "Save and Exit / Exit Without Saving / Cancel" dialog.
-     * Called by both the Main Menu button and the window X button.
-     */
     public void confirmAndReturnToMenu() {
         Object[] options = { "Save and Exit", "Exit Without Saving", "Cancel" };
         int choice = JOptionPane.showOptionDialog(
@@ -182,16 +164,16 @@ public class GamePanel extends JPanel implements Runnable {
         return true;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Game loop
-    // ─────────────────────────────────────────────────────────────────────────
 
     @Override
     public void run() {
+        //last update
         long   lastTime = System.nanoTime();
+        //updates needed
         double delta    = 0.0;
 
         while (running) {
+            //now - prev / 60fps is the delta
             long now = System.nanoTime();
             delta += (now - lastTime) / NANOS_PER_UPDATE;
             lastTime = now;
@@ -210,31 +192,11 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
     }
-
-    /*/----- CHANGE: replaced respawnPlayer() with loadSaveOrMenu() -----/
-     * PURPOSE: respawnPlayer() put the player back at a hardcoded viewport
-     * center with full health — completely ignoring the save system. This
-     * made saving pointless because dying had no real consequence.
-     *
-     * loadSaveOrMenu() instead checks whether a save file exists in slot 1:
-     *   - If YES: restores the full game state (player position, health,
-     *     level layout, enemies) from the save, re-wires the death callback
-     *     so dying again will re-trigger this flow, hides the death panel,
-     *     and returns keyboard focus to the game.
-     *   - If NO:  calls returnToMenu() so the player is not left stuck on a
-     *     death screen with no usable button.
-     *
-     * The death callback must be re-wired after loadFromSave() because
-     * loadFromSave() calls player.respawn(), which resets player state but
-     * does NOT touch the callback — so re-wiring here is safe and necessary
-     * to ensure the next death also triggers the panel correctly.
-     *
-     * USAGE: Called by DeathPanel's "Load Last Save" button.
-     */
+    //load past save -> discard previous save (deathCallBack)
     public void loadSaveOrMenu() {
         if (SaveManager.hasSave(1)) {
             level.loadFromSave(SaveManager.load(1));
-            // re-wire death callback so future deaths still show the panel
+            // re-wire death callback so future deaths still show the panel (updates player)
             level.getPlayer().setOnDeathCallback(() -> {
                 playerDead      = true;
                 deathDelayTimer = DEATH_DISPLAY_DELAY;
@@ -246,7 +208,6 @@ public class GamePanel extends JPanel implements Runnable {
             returnToMenu();
         }
     }
-    /*/----- END CHANGE -----/*/
 
     private void updateGame() {
         LevelInput input = inputHandler.buildInput();
@@ -263,21 +224,10 @@ public class GamePanel extends JPanel implements Runnable {
             if (deathDelayTimer > 0) {
                 deathDelayTimer--;
             } else {
-                /*/----- CHANGE: added deathPanel.refresh() before setVisible(true) -----/
-                 * PURPOSE: The death panel is constructed once at game start, so
-                 * its button/label state could be stale by the time the player
-                 * dies. refresh() re-checks SaveManager.hasSave(1) at the exact
-                 * moment the panel is about to appear, ensuring the "Load Last
-                 * Save" button is only enabled when there is actually something
-                 * to load. Without this call the button could be enabled on a
-                 * first death (before any save exists) or disabled after a save
-                 * was created mid-session.
-                 */
                 SwingUtilities.invokeLater(() -> {
                     deathPanel.refresh();
                     deathPanel.setVisible(true);
                 });
-                /*/----- END CHANGE -----/*/
             }
             return;
         }
@@ -291,10 +241,6 @@ public class GamePanel extends JPanel implements Runnable {
         cameraX = Math.max(0, Math.min(targetCamX, maxCamera));
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Rendering
-    // ─────────────────────────────────────────────────────────────────────────
-
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -306,21 +252,7 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     private void drawLevel(Graphics2D g2) {
-        /*/----- CHANGE: draw background image before platforms -----/
-         * PURPOSE: Previously the background was just the solid colour set in
-         * the constructor. Now each level declares a background image in its
-         * .properties file (e.g. background=Jungle.png). The image is loaded
-         * once via BackgroundLoader and drawn to fill the entire viewport.
-         *
-         * Parallax: the image scrolls at half the camera speed so it appears
-         * to sit behind the gameplay layer, giving a sense of depth.
-         * If no image is available (null or missing file) we fall back to a
-         * sky-blue fill so the screen is never blank.
-         *
-         * The image is tiled horizontally so wide levels never run out of
-         * background. Vertical tiling is skipped — the image is always
-         * stretched to fill the viewport height.
-         */
+       
         BufferedImage bgImage = BackgroundLoader.get(level.getBackgroundImage());
         int vpW = getWidth();
         int vpH = getHeight();
@@ -339,9 +271,8 @@ public class GamePanel extends JPanel implements Runnable {
             g2.setColor(new Color(105, 193, 255));
             g2.fillRect(0, 0, vpW, vpH);
         }
-        /*/----- END CHANGE -----/*/
 
-        // ── Platforms ─────────────────────────────────────────────────────────
+       
         int tileSize = TileAssetLoader.TILE_SIZE;
         for (Platform platform : level.getPlatforms()) {
             Rectangle b       = platform.getBounds();
@@ -364,15 +295,8 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
 
-        // ── Exit zone ──────────────────────────────────────────────────────────
-        /*/----- CHANGE: render exit zone as a colored overlay -----/
-         * PURPOSE: Without a visual the player has no idea the exit exists.
-         * The exit zone is drawn as a semi-transparent vertical strip —
-         * green if the score gate is met (walk in to advance), red/dark if
-         * not yet met (gate is locked). getExitZone() returns null only if
-         * somehow no exit is defined, so we null-check before drawing.
-         */
-        java.awt.Rectangle exit = level.getExitZone();
+       //exit part
+        Rectangle exit = level.getExitZone();
         if (exit != null) {
             boolean gateOpen = level.getScore() >= level.getMinScore();
             g2.setColor(gateOpen
@@ -385,14 +309,7 @@ public class GamePanel extends JPanel implements Runnable {
                 : new Color(160, 0, 0,   160));
             g2.drawRect(exit.x - cameraX, exit.y, exit.width - 1, exit.height - 1);
         }
-        /*/----- END CHANGE -----/*/
-        /*/----- CHANGE: renderer now uses List<Item> and skips collected items -----/
-         * PURPOSE: Items were previously raw Rectangles so there was no way
-         * to know if one had been picked up — collected coins stayed visible.
-         * Now we check item.isCollected() before drawing, so coins disappear
-         * on pickup. Color branches on item.type so future item types (e.g.
-         * HEALTH drawn in red) render differently with no extra renderer code.
-         */
+         //add coin and health. health will not be shwon
         for (Item item : level.getItems()) {
             if (item.isCollected()) continue;
             switch (item.type) {
@@ -402,7 +319,6 @@ public class GamePanel extends JPanel implements Runnable {
             }
             g2.fillOval(item.getX() - cameraX, item.getY(), item.getWidth(), item.getHeight());
         }
-        /*/----- END CHANGE -----/*/
 
         // ── Enemies ───────────────────────────────────────────────────────────
         Graphics2D enemyG = (Graphics2D) g2.create();
@@ -412,7 +328,7 @@ public class GamePanel extends JPanel implements Runnable {
         }
         enemyG.dispose();
 
-        // ── Player ────────────────────────────────────────────────────────────
+        
         Player player = level.getPlayer();
         Graphics2D playerG = (Graphics2D) g2.create();
         playerG.translate(-cameraX, 0);
@@ -424,20 +340,9 @@ public class GamePanel extends JPanel implements Runnable {
         Player player = level.getPlayer();
         g2.setColor(new Color(20, 20, 20));
         g2.setFont(new Font("Monospaced", Font.BOLD, 15));
-        g2.drawString("Move: A/D or Arrow Keys  |  Jump: Space / W / Up", 24, 30);
-        g2.drawString("Player X: " + (int) player.getX()
-                      + "  Y: " + (int) player.getY(), 24, 52);
-        g2.drawString("Grounded: " + player.isGrounded()
-                      + "  HP: " + player.getHealth(), 24, 74);
+        g2.drawString(" HP: " + player.getHealth(), 24, 30);
         g2.drawString("Enemies alive: " + level.getEnemies().size(), 24, 96);
-
-        /*/----- CHANGE: HUD now shows score and min score gate -----/
-         * PURPOSE: Players need to know the score gate so they understand why
-         * the exit might not be working. Score is shown top-right. Below it,
-         * the min score requirement is shown in green if met (exit is open)
-         * or red if not yet met (exit is locked). This gives clear feedback
-         * without needing a separate UI panel.
-         */
+        //hud for score
         g2.setFont(new Font("Monospaced", Font.BOLD, 20));
         String scoreText = "SCORE: " + level.getScore();
         int scoreWidth = g2.getFontMetrics().stringWidth(scoreText);
@@ -451,6 +356,5 @@ public class GamePanel extends JPanel implements Runnable {
                     ? new Color(80, 220, 80)   // green = exit open
                     : new Color(220, 80, 80));  // red = exit locked
         g2.drawString(gateText, getWidth() - gateWidth - 24, 62);
-        /*/----- END CHANGE -----/*/
     }
 }
