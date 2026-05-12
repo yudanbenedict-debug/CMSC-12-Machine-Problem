@@ -20,6 +20,7 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
@@ -118,13 +119,46 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     public void returnToMenu() {
-        // --------------------------------------------------
         running = false;
         SwingUtilities.invokeLater(() -> {
             SwingUtilities.getWindowAncestor(this).dispose();
             onReturnToMenu.run();
         });
-        // --------------------------------------------------
+    }
+
+    /**
+     * Shows a "Save and Exit / Exit Without Saving / Cancel" dialog.
+     * Called by both the Main Menu button and the window X button.
+     */
+    public void confirmAndReturnToMenu() {
+        Object[] options = { "Save and Exit", "Exit Without Saving", "Cancel" };
+        int choice = JOptionPane.showOptionDialog(
+            this,
+            "Are you sure you want to exit without saving?",
+            "Exit to Main Menu",
+            JOptionPane.YES_NO_CANCEL_OPTION,
+            JOptionPane.WARNING_MESSAGE,
+            null,
+            options,
+            options[0]
+        );
+        if (choice == 0) {         // Save and Exit
+            gamePanel_saveGame();
+            returnToMenu();
+        } else if (choice == 1) {  // Exit Without Saving
+            returnToMenu();
+        }
+        // choice == 2 or closed dialog = Cancel, do nothing
+    }
+
+    private void gamePanel_saveGame() {
+        boolean ok = saveGame();
+        if (!ok) {
+            JOptionPane.showMessageDialog(this,
+                "Save failed — exiting anyway.",
+                "Save Error",
+                JOptionPane.WARNING_MESSAGE);
+        }
     }
 
     public void resumeGame() {

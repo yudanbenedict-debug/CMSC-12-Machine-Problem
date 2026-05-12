@@ -30,7 +30,7 @@ public class PausePanel extends JPanel {
                 ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE);
         });
 
-        exitBtn.addActionListener(e -> gamePanel.returnToMenu());
+        exitBtn.addActionListener(e -> gamePanel.confirmAndReturnToMenu());
 
         box.add(resumeBtn);
         box.add(saveBtn);

@@ -7,15 +7,15 @@ import java.awt.Graphics;
 import java.awt.GridBagLayout;
 import java.awt.image.BufferedImage;
 import java.io.File;
+
+import javax.imageio.ImageIO;
+import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 import javax.swing.Timer;
-import javax.imageio.ImageIO;
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 
 import Exceptions.ResourceLoadException;
