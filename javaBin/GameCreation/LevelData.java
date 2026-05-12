@@ -7,6 +7,7 @@ import java.util.List;
 import Entities.EnemyFolder.EnemiesType;
 import GamePlatform.Platform;
 import GamePlatform.PlatformType;
+import Entities.Item;
 
 public class LevelData {
 
@@ -25,15 +26,52 @@ public class LevelData {
     // ── Fields ────────────────────────────────────────────────────────────────
     private final ArrayList<Platform>   platforms;
     private final ArrayList<EnemySpawn> enemies;
-    private final ArrayList<Rectangle>  items;
+    private final ArrayList<Item>       items;
 
+    private final int       minScore;
+    private final String    nextLevelFile; // null = final level
+    private final Rectangle exitZone;
+
+    /*/----- CHANGE: added backgroundImage field -----/
+     * PURPOSE: Each level now declares which background image to use via the
+     * "background" key in its .properties file (e.g. background=Jungle.png).
+     * The value is the filename inside Resources/Backgrounds/. null means no
+     * image was specified and GamePanel falls back to its default colour.
+     */
+    private final String backgroundImage; // filename in Resources/Backgrounds/, or null
+    /*/----- END CHANGE -----/*/
+
+    // Backwards-compatible constructor — no background image
     public LevelData(ArrayList<Platform>   platforms,
                      ArrayList<EnemySpawn> enemies,
-                     ArrayList<Rectangle>  items) {
-        this.platforms = platforms;
-        this.enemies   = enemies;
-        this.items     = items;
+                     ArrayList<Item>       items,
+                     int                   minScore,
+                     String                nextLevelFile,
+                     Rectangle             exitZone) {
+        this(platforms, enemies, items, minScore, nextLevelFile, exitZone, null);
     }
+
+    /*/----- CHANGE: full constructor now accepts backgroundImage -----/
+     * PURPOSE: LevelDataLoader passes the parsed "background" property here.
+     * The overload above delegates with null so createStarterLevel() and any
+     * other existing callers compile without changes.
+     */
+    public LevelData(ArrayList<Platform>   platforms,
+                     ArrayList<EnemySpawn> enemies,
+                     ArrayList<Item>       items,
+                     int                   minScore,
+                     String                nextLevelFile,
+                     Rectangle             exitZone,
+                     String                backgroundImage) {
+        this.platforms       = platforms;
+        this.enemies         = enemies;
+        this.items           = items;
+        this.minScore        = minScore;
+        this.nextLevelFile   = nextLevelFile;
+        this.exitZone        = exitZone;
+        this.backgroundImage = backgroundImage;
+    }
+    /*/----- END CHANGE -----/*/
 
     // ── Starter level factory ─────────────────────────────────────────────────
     public static LevelData createStarterLevel(int worldWidth, int worldHeight) {
@@ -41,7 +79,7 @@ public class LevelData {
 
         ArrayList<Platform>   platforms = new ArrayList<>();
         ArrayList<EnemySpawn> enemies   = new ArrayList<>();
-        ArrayList<Rectangle>  items     = new ArrayList<>();
+        ArrayList<Item>       items     = new ArrayList<>();
 
         // ── Floor ─────────────────────────────────────────────────────────────
         platforms.add(new Platform(worldWidth, 60, 0, floorTop, PlatformType.METAL)
@@ -61,18 +99,36 @@ public class LevelData {
         enemies.add(new EnemySpawn(EnemiesType.GUN_ENEMY,    800,  floorTop - 36));
         enemies.add(new EnemySpawn(EnemiesType.KICK_ENEMY,  1400,  floorTop - 64));
         enemies.add(new EnemySpawn(EnemiesType.GUN_ENEMY,   2000,  floorTop - 36));
-        enemies.add(new EnemySpawn(EnemiesType.PUNCH_ENEMY,     2800,  floorTop - 80));
-        enemies.add(new EnemySpawn(EnemiesType.SWORD_ENEMY,3400,  floorTop - 72));
+        enemies.add(new EnemySpawn(EnemiesType.PUNCH_ENEMY, 2800,  floorTop - 80));
+        enemies.add(new EnemySpawn(EnemiesType.SWORD_ENEMY, 3400,  floorTop - 72));
 
-        // ── Items ─────────────────────────────────────────────────────────────
-        items.add(new Rectangle(320,  worldHeight - 220, 20, 20));
-        items.add(new Rectangle(1040, worldHeight - 260, 20, 20));
+        // ── Coins ─────────────────────────────────────────────────────────────
+        items.add(new Item(Item.Type.COIN, 320,  worldHeight - 220, 20, 20));
+        items.add(new Item(Item.Type.COIN, 1040, worldHeight - 260, 20, 20));
+        items.add(new Item(Item.Type.COIN, 2100, worldHeight - 220, 20, 20));
+        items.add(new Item(Item.Type.COIN, 3200, worldHeight - 220, 20, 20));
 
-        return new LevelData(platforms, enemies, items);
+        /*/----- CHANGE: added exit zone and level gate for starter level -----/
+         * PURPOSE: The exit is a tall green zone at the far right edge of the
+         * map. minScore of 10 means the player needs at least 3 kills + 1 coin
+         * or any combination reaching 10 before the gate opens. nextLevelFile
+         * points to level2.properties which must exist in Resources/Data/Level/.
+         */
+        Rectangle exitZone = new Rectangle(worldWidth - 60, 0, 60, worldHeight);
+        return new LevelData(platforms, enemies, items, 10, "level2.properties", exitZone, "Jungle.png");
+        /*/----- END CHANGE -----/*/
     }
 
     // ── Getters ───────────────────────────────────────────────────────────────
-    public List<Platform>   getPlatforms() { return platforms; }
-    public List<EnemySpawn> getEnemies()   { return enemies;   }
-    public List<Rectangle>  getItems()     { return items;     }
+    public List<Platform>   getPlatforms()       { return platforms;       }
+    public List<EnemySpawn> getEnemies()         { return enemies;         }
+    public List<Item>       getItems()           { return items;           }
+    public int              getMinScore()        { return minScore;        }
+    public String           getNextLevel()       { return nextLevelFile;   }
+    public Rectangle        getExitZone()        { return exitZone;        }
+    /*/----- CHANGE: added getBackgroundImage() getter -----/
+     * PURPOSE: GamePanel calls this to find out which image to draw behind the level.
+     */
+    public String           getBackgroundImage() { return backgroundImage; }
+    /*/----- END CHANGE -----/*/
 }

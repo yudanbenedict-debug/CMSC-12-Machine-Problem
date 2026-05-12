@@ -8,21 +8,12 @@ import java.awt.Graphics;
 import java.awt.Rectangle;
 
 public class Player extends LivingEntity {
-    // private static final int SPRITE_DRAW_Y_OFFSET = 48;
-    // private static final int HITBOX_OFFSET_X = 50;   // trim 28px from each side
-    // private static final int HITBOX_WIDTH    = 112 - (HITBOX_OFFSET_X * 2); 
-
-    // private static final int HITBOX_OFFSET_Y = SPRITE_DRAW_Y_OFFSET; // 48 px from top of entity
-    // private static final int HITBOX_HEIGHT   = 120; // remaining 120 px
-    
     private static final int ATTACK_ANIMATION_FRAMETIMES = 4;
     private static final int ATTACK_ANIMATION_FRAMES = 5;
     private static final int ATTACK_ANIM_DURATION = ATTACK_ANIMATION_FRAMES * ATTACK_ANIMATION_FRAMETIMES;
 
     private static final int NORMAL_WIDTH = 32;
     private static final int NORMAL_HEIGHT = 48;
-    //increase width when shooting
-    private static final int SHOOT_WIDTH = 40;
 
     private static final float SPRINT_MULTIPILIER = 1.6F;
 
@@ -38,9 +29,6 @@ public class Player extends LivingEntity {
     private float velX;
     private float velY;
     private float gravity;
-
-    private int score;
-    private int goldCount;
 
     //
     private Gun gun = new Gun();
@@ -63,8 +51,6 @@ public class Player extends LivingEntity {
         super(x, y, NORMAL_WIDTH, NORMAL_HEIGHT, 20.0f, 5.0f, 3.0f, 14.0f);
         this.velX = velX;
         this.velY = velY;
-        this.goldCount = 0;
-        this.score = 0;
         this.sprinting = false;
         this.isJumping = false;
         this.gravity = 0.65f;
@@ -79,10 +65,12 @@ public class Player extends LivingEntity {
         jumpBufferFrames = JUMP_BUFFER_FRAMES;
     }
     public void sprint(){
-        if(isGrounded);
+        if(isGrounded) {
+            sprinting = true;
+        }
     }
     public void attack(){
-
+        tryAttack();
     }
 
     @Override
@@ -125,12 +113,6 @@ public class Player extends LivingEntity {
         if (velY >= 20) { velY = 20; }
         y += velY;
 
-        // if(currentState.equals("sword_attack")){
-        //     width = SHOOT_WIDTH;
-        // }
-        // else{
-        //     width = NORMAL_WIDTH;
-        // }
         gun.tick();
         sword.tick();
         
@@ -153,14 +135,8 @@ public class Player extends LivingEntity {
     
     @Override
     public Rectangle getBounds() {
-       //dbugging
-
-        return new Rectangle(
-            (int) x,
-            (int) y,
-            (int) width,
-            (int) height
-        );
+        cachedBounds.setBounds((int) x, (int) y, (int) width, (int) height);
+        return cachedBounds;
     }
 
     public boolean isGrounded() { return isGrounded; }
@@ -172,7 +148,7 @@ public class Player extends LivingEntity {
     
     public Gun getGun(){ return gun; }
     public Sword getSword(){return sword;}
-    public int get_activeslots(){return slot;};
+    public int get_activeslots(){return slot;}
     public void setHealth(float health){
         this.health = health;
     }
@@ -187,7 +163,7 @@ public class Player extends LivingEntity {
         this.movingLeft  = moveLeft;
         this.movingRight = moveRight;
         if (jumpPressed) jump();
-        this.sprinting = sprintPressed;
+        this.sprinting = sprintPressed && isGrounded;
 
         if(weaponSlot == 1 || weaponSlot == 2){
             slot = weaponSlot;
@@ -204,7 +180,7 @@ public class Player extends LivingEntity {
     public void tryAttack(){
         Rectangle atk_rect = getBounds();
         boolean fired;
-        float hx = atk_rect.x - 50 /*offset */, hy = atk_rect.y, hw = atk_rect.width, hh = atk_rect.height;
+        float hx = atk_rect.x, hy = atk_rect.y, hw = atk_rect.width, hh = atk_rect.height;
         if(slot == 1){
             fired = gun.tryAttack(hx, hy, hw, hh, facingRight);
         }

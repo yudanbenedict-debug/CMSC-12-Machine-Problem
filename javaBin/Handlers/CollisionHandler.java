@@ -61,16 +61,6 @@ public class CollisionHandler {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Item collisions
-    // ─────────────────────────────────────────────────────────────────────────
-
-    public void handleItemCollisions(Player player, List<Rectangle> items) {
-        Rectangle playerBounds = player.getBounds();
-        for (Rectangle itemBounds : items) {
-            if (playerBounds.intersects(itemBounds)) {
-                // TODO: item collection logic
-            }
-        }
-    }
+    // Item collection is handled in Level.update() where Item type and score
+    // logic are both accessible. No method needed here.
 }

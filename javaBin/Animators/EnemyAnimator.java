@@ -22,16 +22,16 @@ public class EnemyAnimator {
         public final int hitFlashTimer;
         public final Entities.EnemyFolder.Enemies.AIState aiState;
         public final int attackCD;
-
-        //dont make it jump
         public final float velX;
+        public final int alertTimer;
 
-        public SnapShot(boolean alive, int hitFlashTimer, Entities.EnemyFolder.Enemies.AIState aiState, int atk_cd, float velX){
-            this.alive = alive;
+        public SnapShot(boolean alive, int hitFlashTimer, Entities.EnemyFolder.Enemies.AIState aiState, int atk_cd, float velX, int alertTimer){
+            this.alive        = alive;
             this.hitFlashTimer = hitFlashTimer;
-            this.aiState = aiState;
-            this.attackCD =atk_cd;
-            this.velX =velX;
+            this.aiState      = aiState;
+            this.attackCD     = atk_cd;
+            this.velX         = velX;
+            this.alertTimer   = alertTimer;
         }
 
     }
@@ -43,13 +43,13 @@ public class EnemyAnimator {
 
     public EnemyAnimator(EnemiesType type){
         EnemySpriteLoader.EnemyFrameSet frames  = EnemySpriteLoader.get(type);
-        animations.put("walk", new Animation(frames.walk, 6, true));
-        animations.put("idle", new Animation(frames.idle, 3, true));
-        animations.put("attack", new Animation(frames.attack, 4, true));
-        //hurt animation still not uploaded
-        animations.put("damaged", new Animation(frames.hurt, 1, true));
-        //end
-        animations.put("death", new Animation(frames.death, 5, true));
+        animations.put("walk",    new Animation(frames.walk,   6, true));
+        animations.put("idle",    new Animation(frames.idle,   3, true));
+        animations.put("chase",   new Animation(frames.chase,  5, true));
+        animations.put("alert",   new Animation(frames.alert,  4, false)); // plays once then holds last frame
+        animations.put("attack",  new Animation(frames.attack, 4, true));
+        animations.put("damaged", new Animation(frames.hurt,   1, true));
+        animations.put("death",   new Animation(frames.death,  5, true));
 
        
         switchAnim("walk");
@@ -69,18 +69,13 @@ public class EnemyAnimator {
     }
 
     private String resolveState(SnapShot s) {
-        if (!s.alive) {
-            return "death";
-        }
-        if (s.hitFlashTimer > 0) {
-            return "damaged";
-        }
-        if (s.aiState == Enemies.AIState.ATTACK && s.attackCD > ATK_CD - 20) {
-            return "attack";
-        }
-        if (Math.abs(s.velX) > 0.1f) {
-            return "walk";
-        }
+        if (!s.alive)                                    return "death";
+        if (s.hitFlashTimer > 0)                         return "damaged";
+        if (s.aiState == Enemies.AIState.ALERT)          return "alert";
+        if (s.aiState == Enemies.AIState.CHASE)          return "chase";
+        if (s.aiState == Enemies.AIState.ATTACK
+                && s.attackCD > ATK_CD - 20)             return "attack";
+        if (Math.abs(s.velX) > 0.1f)                     return "walk";
         return "idle";
     }
 

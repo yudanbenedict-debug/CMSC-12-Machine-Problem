@@ -21,9 +21,11 @@ public abstract class Entity {
     public abstract void update();
     public abstract void draw(Graphics g);
 
-    //collision method
+    protected final Rectangle cachedBounds = new Rectangle();
+
     public Rectangle getBounds() {
-        return new Rectangle((int)x, (int)y, (int)width, (int)height);
+        cachedBounds.setBounds((int) x, (int) y, (int) width, (int) height);
+        return cachedBounds;
     }
 
     public float getX() { return x; }

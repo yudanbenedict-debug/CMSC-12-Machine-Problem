@@ -29,15 +29,20 @@ public class EnemySpriteLoader {
     public static class EnemyFrameSet {
         public final BufferedImage[] walk;
         public final BufferedImage[] idle;
+        public final BufferedImage[] chase;
+        public final BufferedImage[] alert;
         public final BufferedImage[] attack;
         public final BufferedImage[] hurt;
         public final BufferedImage[] death;
 
         EnemyFrameSet(BufferedImage[] walk,   BufferedImage[] idle,
+                      BufferedImage[] chase,  BufferedImage[] alert,
                       BufferedImage[] attack, BufferedImage[] hurt,
                       BufferedImage[] death) {
             this.walk   = walk;
             this.idle   = idle;
+            this.chase  = chase;
+            this.alert  = alert;
             this.attack = attack;
             this.hurt   = hurt;
             this.death  = death;
@@ -85,8 +90,18 @@ public class EnemySpriteLoader {
         );
 
         BufferedImage[] idle = SpriteLoader.loadImages(
-            basePath + "patrol", enemy + "_patrol",
+            basePath + "idle", enemy + "_idle",
             data.walkFrameCount, fb
+        );
+
+        BufferedImage[] chase = SpriteLoader.loadImages(
+            basePath + "chase", enemy + "_chase",
+            data.chaseFrameCount, fb
+        );
+
+        BufferedImage[] alert = SpriteLoader.loadImages(
+            basePath + "alert", enemy + "_alert",
+            data.alertFrameCount, fb
         );
 
         BufferedImage[] attack = SpriteLoader.loadImages(
@@ -104,7 +119,7 @@ public class EnemySpriteLoader {
             7, fb
         );
 
-        return new EnemyFrameSet(walk, idle, attack, hurt, death);
+        return new EnemyFrameSet(walk, idle, chase, alert, attack, hurt, death);
     }
     
 

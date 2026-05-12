@@ -120,13 +120,20 @@ public class InputHandler {
         });
     }
 
+    /** Clears any pending pause signal — call this when resuming so a held ESC doesn't immediately re-pause. */
+    public void consumePause() {
+        pausedPressed = false;
+    }
+
     public LevelInput buildInput() {
-        boolean pause = pausedPressed;
+        boolean pause  = pausedPressed;
+        boolean reload = reloadPressed;
 
         pausedPressed = false;
+        reloadPressed = false;   // consume it — one press = one reload attempt
         return new LevelInput(
             moveLeft, moveRight, jumpHeld, isRunning,
-            attackPressed, weaponSlot, reloadPressed, pause
+            attackPressed, weaponSlot, reload, pause
         );
     }
 }

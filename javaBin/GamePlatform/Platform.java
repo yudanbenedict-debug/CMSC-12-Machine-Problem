@@ -13,6 +13,7 @@ public class Platform {
     private int collisionOffsetY;
     private int collisionWidthAdjust;
     private int collisionHeightAdjust;
+    private final Rectangle cachedBounds = new Rectangle();
     private static BufferedImage metalImg;
     private static BufferedImage woodImg;
     private static BufferedImage sandImg;
@@ -51,11 +52,13 @@ public class Platform {
     }
 
     public Rectangle getBounds() {
-        int collisionX      = Math.round(pos_x)       + collisionOffsetX;
-        int collisionY      = Math.round(pos_y)        + collisionOffsetY;
-        int collisionWidth  = Math.max(1, Math.round(plat_width)  + collisionWidthAdjust);
-        int collisionHeight = Math.max(1, Math.round(plat_height) + collisionHeightAdjust);
-        return new Rectangle(collisionX, collisionY, collisionWidth, collisionHeight);
+        cachedBounds.setBounds(
+            Math.round(pos_x)  + collisionOffsetX,
+            Math.round(pos_y)  + collisionOffsetY,
+            Math.max(1, Math.round(plat_width)  + collisionWidthAdjust),
+            Math.max(1, Math.round(plat_height) + collisionHeightAdjust)
+        );
+        return cachedBounds;
     }
 
     public Rectangle getRenderBounds() {

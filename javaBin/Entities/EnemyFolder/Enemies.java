@@ -28,11 +28,9 @@ import java.util.Random;
 public class Enemies extends LivingEntity {
 
     
-    // private int stompCount = 0;
-    // private final int maxStomps = 3;
     private boolean dying = false;
     // ── AI states ─────────────────────────────────────────────────────────────
-    public enum AIState { PATROL, CHASE, ATTACK, DEAD }
+    public enum AIState { PATROL, ALERT, CHASE, ATTACK, DEAD }
 
     // ── Physics constants ─────────────────────────────────────────────────────
     private static final float GRAVITY        = 0.65f;
@@ -40,11 +38,12 @@ public class Enemies extends LivingEntity {
     private static final float SNAP_TOL       = 6f;
 
     // ── AI constants ──────────────────────────────────────────────────────────
-    private static final int MIN_IDLE  = 40;
-    private static final int MAX_IDLE  = 120;
-    private static final int ATK_CD    = 50;
-    private static final int ATK_REACH = 30;
-    private static final int HIT_FLASH = 12;
+    private static final int   MIN_IDLE        = 40;
+    private static final int   MAX_IDLE        = 120;
+    private static final int   ATK_CD          = 50;
+    private static final int   ATK_REACH       = 30;
+    private static final int   HIT_FLASH       = 12;
+    private static final float CHASE_MULTIPLIER = 1.6f;
 
     // ── Identity ──────────────────────────────────────────────────────────────
     private final EnemiesType type;
@@ -62,6 +61,7 @@ public class Enemies extends LivingEntity {
     private boolean alive = true;
     private AIState aiState;
     private int     idleTimer;
+    private int     alertTimer;
     private int     attackCooldown;
     private int     hitFlashTimer;
 
@@ -94,6 +94,7 @@ public class Enemies extends LivingEntity {
         this.velX           = 0f;
         this.velY           = 0f;
         this.idleTimer      = 0;
+        this.alertTimer     = 0;
         this.attackCooldown = 0;
         this.hitFlashTimer  = 0;
 
@@ -129,19 +130,33 @@ public class Enemies extends LivingEntity {
     // ─────────────────────────────────────────────────────────────────────────
 
     private void updateAI(float playerX, float playerY) {
-        float cx   = x + width / 2f;
+        float cx   = x + width  / 2f;
+        float cy   = y + height / 2f;
         float dx   = playerX - cx;
-        float dist = Math.abs(dx);
+        float dy   = playerY - cy;
+        float dist = (float) Math.sqrt(dx * dx + dy * dy);
 
         switch (aiState) {
 
             case PATROL:
                 if (dist <= data.aggroRange) {
-                    aiState   = AIState.CHASE;
-                    idleTimer = 0;
+                    // Spotted the player — freeze and play alert animation first
+                    aiState    = AIState.ALERT;
+                    alertTimer = data.alertFrameCount * 4; // frames * ticks-per-frame
+                    velX       = 0f;
+                    facingRight = dx > 0;
                     break;
                 }
                 doPatrol(cx);
+                break;
+
+            case ALERT:
+                // Stay frozen and facing the player while alert plays
+                velX = 0f;
+                facingRight = dx > 0;
+                if (alertTimer <= 0) {
+                    aiState = AIState.CHASE;
+                }
                 break;
 
             case CHASE:
@@ -157,7 +172,8 @@ public class Enemies extends LivingEntity {
                     break;
                 }
                 facingRight = dx > 0;
-                velX = facingRight ? walk_speed : -walk_speed;
+                float chaseSpeed = walk_speed * CHASE_MULTIPLIER;
+                velX = facingRight ? chaseSpeed : -chaseSpeed;
                 break;
 
             case ATTACK:
@@ -214,19 +230,7 @@ public class Enemies extends LivingEntity {
         y       += velY;
         grounded = false;
     }
-    
-    // public void registerStomp() {
-    //     if (dying) return;
-
-    //     stompCount++;
-
-    //     if (stompCount >= maxStomps) {
-    //         dying = true;
-    //         setAlive(false); // stop normal behavior
-            
-    //     }
-    // }
-    public boolean isDying() {
+        public boolean isDying() {
         return dying;
     }
     // ─────────────────────────────────────────────────────────────────────────
@@ -287,6 +291,7 @@ public class Enemies extends LivingEntity {
 
     private void updateTimers() {
         if (idleTimer      > 0) idleTimer--;
+        if (alertTimer     > 0) alertTimer--;
         if (attackCooldown > 0) attackCooldown--;
         if (hitFlashTimer  > 0) hitFlashTimer--;
     }
@@ -297,7 +302,7 @@ public class Enemies extends LivingEntity {
 
     private SnapShot buildSnapshot() {
         return new SnapShot(
-            alive, hitFlashTimer, aiState, attackCooldown, velX
+            alive, hitFlashTimer, aiState, attackCooldown, velX, alertTimer
         );
     }
 
@@ -396,7 +401,8 @@ public class Enemies extends LivingEntity {
 
     @Override
     public Rectangle getBounds() {
-        return new Rectangle((int) x, (int) y, (int) width, (int) height);
+        cachedBounds.setBounds((int) x, (int) y, (int) width, (int) height);
+        return cachedBounds;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -405,6 +411,22 @@ public class Enemies extends LivingEntity {
 
     public EnemiesType getType()      { return type;      }
     public float       getHealth()    { return health;    }
+
+    /*/----- CHANGE: added setHealth() -----/
+     * PURPOSE: EnemyManager.loadEnemies() needs to restore each enemy's
+     * health to the value it had at save time rather than the default full
+     * health that the Enemies constructor sets. Without this setter, enemies
+     * would always load at full health even if they were heavily damaged
+     * when the player saved. Clamped to [0, maxHealth] to prevent invalid
+     * states from a corrupt or edited save file.
+     *
+     * USAGE: Called by EnemyManager.loadEnemies() immediately after
+     * constructing each Enemies instance from a snapshot.
+     */
+    public void setHealth(float value) {
+        this.health = Math.max(0, Math.min(value, maxHealth));
+    }
+    /*/----- END CHANGE -----/*/
     public float       getMaxHealth() { return maxHealth; }
     public boolean     isGrounded()   { return grounded;  }
     public AIState     getAIState()   { return aiState;   }

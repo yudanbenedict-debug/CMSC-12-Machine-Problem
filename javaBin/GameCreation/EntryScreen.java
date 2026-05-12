@@ -7,10 +7,6 @@ import java.awt.Graphics;
 import java.awt.GridBagLayout;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.net.URL;
-import javax.imageio.ImageIO;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -18,25 +14,28 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import javax.imageio.ImageIO;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 
 import Exceptions.ResourceLoadException;
 import Loaders.MusicPlayer;
 import DataLoader.SaveManager;
 
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
-import java.io.InputStream;
 
 
 public class EntryScreen extends JFrame {
-    private Clip backgroundMusic;
-
     private final ScrollingBackgroundPanel backgroundPanel;
 
     public EntryScreen() {
         setTitle("Island Escapers - Main Menu");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                exitGame();
+            }
+        });
         setSize(800, 600); // Matches with test java frame size
         setLocationRelativeTo(null);
 
@@ -78,19 +77,37 @@ public class EntryScreen extends JFrame {
 
         menuPanel.add(Box.createVerticalStrut(80));
 
+        JButton exitButton = new JButton("Exit Game");
+        exitButton.setFont(new Font("Arial", Font.BOLD, 20));
+        exitButton.setPreferredSize(new Dimension(200, 60));
+        exitButton.setMaximumSize(new Dimension(200, 60));
+        exitButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        exitButton.addActionListener(e -> exitGame());
+        menuPanel.add(Box.createVerticalStrut(10));
+        menuPanel.add(exitButton);
+
         backgroundPanel.add(menuPanel);
+    }
+
+    private void exitGame() {
+        int choice = JOptionPane.showConfirmDialog(
+            this,
+            "Are you sure you want to exit?",
+            "Exit Game",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.QUESTION_MESSAGE
+        );
+        if (choice == JOptionPane.YES_OPTION) {
+            MusicPlayer.stop();
+            dispose();
+            System.exit(0);
+        }
     }
 
     private void startGame(boolean loadSave) {
         backgroundPanel.stopScrolling();
-    
-        if (backgroundMusic != null) {
-            backgroundMusic.stop();
-            backgroundMusic.close();
-        }
-    
+        MusicPlayer.stop();
         dispose();
-        JOptionPane.showMessageDialog(null, "Launching test level...");
         if (loadSave) {
             Game.launchWithSave();
         } else {
@@ -99,7 +116,7 @@ public class EntryScreen extends JFrame {
     }
     
 
-    private void playMusic() throws ResourceLoadException{
+    private void playMusic() {
         MusicPlayer.play("Resources/Sounds/Newer-Days.wav");
     }
     private static class ScrollingBackgroundPanel extends JPanel {
@@ -120,32 +137,13 @@ public class EntryScreen extends JFrame {
         
     private void loadImage() {
         try {
-        
-            URL url = getClass().getResource("/Ocean.png");
-            if (url != null) {
-                ocean = ImageIO.read(url);
-                return;
-            }
-            
             File file = new File("Resources/Ocean.png");
-            if (file.exists()) {
-                ocean = ImageIO.read(file);
-                return;
+            if (!file.exists()) {
+                throw new ResourceLoadException("Ocean.png");
             }
-            
-            file = new File("../Resources/Ocean.png");
-            if (file.exists()) {
-                ocean = ImageIO.read(file);
-                return;
-            }
-            
-            file = new File("Ocean.png");
-            if (file.exists()) {
-                ocean = ImageIO.read(file);
-                return;
-            }
-
-            throw new ResourceLoadException("Ocean.png");
+            ocean = ImageIO.read(file);
+        } catch (ResourceLoadException e) {
+            throw e;
         } catch (Exception e) {
             throw new ResourceLoadException("Ocean.png", e);
         }
@@ -189,7 +187,5 @@ public class EntryScreen extends JFrame {
      }
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new EntryScreen().setVisible(true));
-    }
+
 }

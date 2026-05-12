@@ -13,6 +13,8 @@ public class Bullet {
     private boolean active = true;
     private final float damage;
 
+    private final Rectangle cachedBounds = new Rectangle(0, 0, 10, 6);
+
     public Bullet(float pos_x, float pos_y, boolean facingRight, float DAMAGE){
         this.x = pos_x;
         this.y = pos_y;
@@ -33,22 +35,19 @@ public class Bullet {
         }
     }
     public Rectangle getBounds(){
-        //static width and height. waiting if needed to be final'd in instance variable or should the bullet size be upgradable.
-        return new Rectangle((int) x, (int) y, 10, 6);
-
+        cachedBounds.setLocation((int) x, (int) y);
+        return cachedBounds;
     }
 
     public void consume(){
-        active = false;
+        deactivate();
     }
     public boolean isActive(){
         return active;
-
     }
-    public void deactivate()  { 
+    public void deactivate() {
         active = false;
-        
-     }
+    }
     public float getDamage(){
         return damage;
     }

@@ -2,14 +2,11 @@ package Entities;
 import java.awt.Graphics;
 
 public abstract class LivingEntity extends Entity {
-    //
     protected float health;
     protected float damage;
     protected float walk_speed;
     protected float jump_height;
 
-    //ai shit here
-    
     public LivingEntity(float x, float y, int width, int height, float health, float damage, float walk_speed, float jump_height){
         super(x, y, width, height);
         this.health = health;
@@ -18,13 +15,10 @@ public abstract class LivingEntity extends Entity {
         this.jump_height = jump_height;
     }
 
-
-    //death
     public void die(){
         onDeath();
     }
-    //take damage.. add catcherss
-    //add throiws herer
+
     public void takeDamage(float damage) {
         this.health = this.health - damage;
 
