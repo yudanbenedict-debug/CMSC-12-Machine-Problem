@@ -21,7 +21,6 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
@@ -116,33 +115,36 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     public void confirmAndReturnToMenu() {
-        Object[] options = { "Save and Exit", "Exit Without Saving", "Cancel" };
-        int choice = JOptionPane.showOptionDialog(
+        paused = true;
+        pauseMenu.setVisible(false);
+        ModalDialog dlg = new ModalDialog(
             this,
-            "Are you sure you want to exit without saving?",
             "Exit to Main Menu",
-            JOptionPane.YES_NO_CANCEL_OPTION,
-            JOptionPane.WARNING_MESSAGE,
-            null,
-            options,
-            options[0]
+            "Are you sure you want to exit?",
+            new String[]{"Save and Exit", "Exit Without Saving", "Cancel"},
+            choice -> {
+                if (choice == 0) {
+                    boolean ok = saveGame();
+                    if (!ok) {
+                        ModalDialog errDlg = new ModalDialog(
+                            this,
+                            "Save Error",
+                            "Save failed — exiting anyway.",
+                            new String[]{"OK"},
+                            c -> returnToMenu()
+                        );
+                        errDlg.showDialog();
+                    } else {
+                        returnToMenu();
+                    }
+                } else if (choice == 1) {
+                    returnToMenu();
+                } else {
+                    resumeGame();
+                }
+            }
         );
-        if (choice == 0) {
-            gamePanel_saveGame();
-            returnToMenu();
-        } else if (choice == 1) {
-            returnToMenu();
-        }
-    }
-
-    private void gamePanel_saveGame() {
-        boolean ok = saveGame();
-        if (!ok) {
-            JOptionPane.showMessageDialog(this,
-                "Save failed — exiting anyway.",
-                "Save Error",
-                JOptionPane.WARNING_MESSAGE);
-        }
+        dlg.showDialog();
     }
 
     public void resumeGame() {

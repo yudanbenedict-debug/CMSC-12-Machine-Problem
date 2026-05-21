@@ -214,10 +214,10 @@ public class EnemyManager {
     }
 
     public List<Enemies> getEnemies() {
-        return Collections.unmodifiableList(enemies);
+        return new ArrayList<>(enemies);
     }
 
     public List<Rocket> getRockets() {
-        return Collections.unmodifiableList(rockets);
+        return new ArrayList<>(rockets);
     }
 }

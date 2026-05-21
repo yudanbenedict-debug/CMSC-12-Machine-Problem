@@ -55,7 +55,12 @@ public class Game extends JFrame {
                             .getLocalGraphicsEnvironment().getDefaultScreenDevice();
                         gd2.setFullScreenWindow(null);
                         dispose();
-                        new EntryScreen().setVisible(true);
+                        EntryScreen es = new EntryScreen();
+                        es.setVisible(true);
+                        SwingUtilities.invokeLater(() -> {
+                            es.toFront();
+                            es.requestFocus();
+                        });
                     })
                 );
             }

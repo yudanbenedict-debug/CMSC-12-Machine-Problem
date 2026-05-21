@@ -3,18 +3,18 @@ package GameCreation;
 import DataLoader.SaveManager;
 
 import javax.swing.JButton;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagLayout;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridLayout;
 
 public class PausePanel extends JPanel {
 
     public PausePanel(GamePanel gamePanel) {
-        setOpaque(true);
-        setBackground(new Color(0, 0, 0, 180));
+        setOpaque(false);
         setLayout(new GridBagLayout());
 
         JPanel box = new JPanel();
@@ -29,10 +29,14 @@ public class PausePanel extends JPanel {
 
         saveBtn.addActionListener(e -> {
             boolean ok = gamePanel.saveGame();
-            JOptionPane.showMessageDialog(gamePanel,
-                ok ? "Game saved!" : "Save failed.",
+            ModalDialog dlg = new ModalDialog(
+                gamePanel,
                 ok ? "Saved" : "Error",
-                ok ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE);
+                ok ? "Game saved!" : "Save failed.",
+                new String[]{"OK"},
+                choice -> {}
+            );
+            dlg.showDialog();
         });
 
         exitBtn.addActionListener(e -> gamePanel.confirmAndReturnToMenu());
@@ -42,5 +46,14 @@ public class PausePanel extends JPanel {
         box.add(exitBtn);
 
         add(box);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setColor(new Color(0, 0, 0, 180));
+        g2.fillRect(0, 0, getWidth(), getHeight());
+        g2.dispose();
+        super.paintComponent(g);
     }
 }

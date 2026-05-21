@@ -30,9 +30,9 @@ import Entities.Item;
  */
 public class LevelDataLoader {
 
-    private static final String BASE_PATH = "assets/Data/Level/";
+    private static final String BASE_PATH = "config/Data/Level/";
 
-    // ── Public loader ─────────────────────────────────────────────────────────
+
 
     public static LevelData load(String levelFile, int worldWidth, int worldHeight) {
         File file = new File(BASE_PATH + levelFile);

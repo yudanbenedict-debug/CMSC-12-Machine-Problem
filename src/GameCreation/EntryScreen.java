@@ -9,14 +9,13 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
 import java.io.File;
-
+import javax.swing.SwingUtilities;
 import javax.imageio.ImageIO;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 import javax.swing.BoxLayout;
@@ -29,6 +28,8 @@ public class EntryScreen extends JFrame {
     private final ScrollingBackgroundPanel backgroundPanel;
     private CreditsPanel creditsOverlay;
     private HelpPanel helpOverlay;
+    private JButton helpBtn;
+    private JButton creditsBtn;
 
     public EntryScreen() {
         setTitle("Island Escapers - Main Menu");
@@ -50,7 +51,7 @@ public class EntryScreen extends JFrame {
         backgroundPanel = new ScrollingBackgroundPanel();
         playMusic();
 
-        //center button stack
+        
         JPanel inner = new JPanel();
         inner.setOpaque(false);
         inner.setLayout(new BoxLayout(inner, BoxLayout.Y_AXIS));
@@ -96,7 +97,7 @@ public class EntryScreen extends JFrame {
         backgroundPanel.setLayout(new java.awt.GridBagLayout());
         backgroundPanel.add(inner);
 
-        //overlays
+        
         creditsOverlay = new CreditsPanel(() -> creditsOverlay.setVisible(false));
         creditsOverlay.setVisible(false);
 
@@ -104,14 +105,14 @@ public class EntryScreen extends JFrame {
         helpOverlay.setVisible(false);
 
         JLayeredPane layered = getLayeredPane();
-        creditsOverlay.setBounds(0, 0, 1, 1);
-        helpOverlay.setBounds(0, 0, 1, 1);
+        creditsOverlay.setBounds(0, 0, getWidth(), getHeight());
+        helpOverlay.setBounds(0, 0, getWidth(), getHeight());
         layered.add(creditsOverlay, JLayeredPane.POPUP_LAYER);
         layered.add(helpOverlay, JLayeredPane.POPUP_LAYER);
 
-        //corner buttons — sized and placed on resize
-        JButton helpBtn    = makeCornerButton("Help");
-        JButton creditsBtn = makeCornerButton("Credits");
+        
+        helpBtn    = makeCornerButton("Help");
+        creditsBtn = makeCornerButton("Credits");
         helpBtn.addActionListener(e -> showHelp());
         creditsBtn.addActionListener(e -> showCredits());
         layered.add(helpBtn,    JLayeredPane.PALETTE_LAYER);
@@ -122,18 +123,20 @@ public class EntryScreen extends JFrame {
             public void componentResized(java.awt.event.ComponentEvent e) {
                 int w = getWidth();
                 int h = getHeight();
-                creditsOverlay.setBounds(0, 0, w, h);
-                helpOverlay.setBounds(0, 0, w, h);
-
-                int btnW = 120;
-                int btnH = 40;
-                int margin = 20;
-                helpBtn.setBounds(margin, h - btnH - margin, btnW, btnH);
-                creditsBtn.setBounds(w - btnW - margin, h - btnH - margin, btnW, btnH);
+                positionOverlays();
             }
         });
 
         setContentPane(backgroundPanel);
+
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowOpened(java.awt.event.WindowEvent e) {
+                positionOverlays();
+                toFront();
+                requestFocus();
+            }
+        });
     }
 
     private JButton makeCornerButton(String label) {
@@ -147,40 +150,54 @@ public class EntryScreen extends JFrame {
         return btn;
     }
 
+    private void positionOverlays() {
+        int w = getWidth();
+        int h = getHeight();
+        int btnW = 120;
+        int btnH = 40;
+        int margin = 20;
+        creditsOverlay.setBounds(0, 0, w, h);
+        helpOverlay.setBounds(0, 0, w, h);
+        helpBtn.setBounds(margin, h - btnH - margin, btnW, btnH);
+        creditsBtn.setBounds(w - btnW - margin, h - btnH - margin, btnW, btnH);
+    }
+
     private void showCredits() {
-        creditsOverlay.setBounds(0, 0, getWidth(), getHeight());
+        positionOverlays();
         creditsOverlay.setVisible(true);
+        creditsOverlay.revalidate();
         creditsOverlay.repaint();
     }
 
     private void showHelp() {
-        helpOverlay.setBounds(0, 0, getWidth(), getHeight());
+        positionOverlays();
         helpOverlay.setVisible(true);
+        helpOverlay.revalidate();
         helpOverlay.repaint();
     }
 
     private void exitGame() {
-        int choice = JOptionPane.showConfirmDialog(
-            this,
-            "Are you sure you want to exit?",
+        ModalDialog dlg = new ModalDialog(
+            backgroundPanel,
             "Exit Game",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.QUESTION_MESSAGE
+            "Are you sure you want to exit?",
+            new String[]{"Yes", "No"},
+            choice -> {
+                if (choice == 0) {
+                    MusicPlayer.stop();
+                    GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+                    gd.setFullScreenWindow(null);
+                    dispose();
+                    System.exit(0);
+                }
+            }
         );
-        if (choice == JOptionPane.YES_OPTION) {
-            MusicPlayer.stop();
-            GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-            gd.setFullScreenWindow(null);
-            dispose();
-            System.exit(0);
-        }
+        dlg.showDialog();
     }
 
     private void startGame(boolean loadSave) {
         backgroundPanel.stopScrolling();
         MusicPlayer.stop();
-        GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-        gd.setFullScreenWindow(null);
         dispose();
         if (loadSave) {
             Game.launchWithSave();
